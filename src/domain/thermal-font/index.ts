@@ -10,7 +10,7 @@ const glyphModules = import.meta.glob('./glyphs/*.glyph.txt', {
 }) as Record<string, string>
 
 const decodeGlyphPath = (filePath: string): string | null => {
-  const match = filePath.match(/\/([0-9A-Fa-f]{4,6})(?:_[^/]+)?\.glyph\.txt$/)
+  const match = filePath.match(/\/([0-9A-Fa-f]{4,6})(?:__[^/]+)?\.glyph\.txt$/)
   if (!match) {
     return null
   }
@@ -27,7 +27,7 @@ const parseGlyphRows = (raw: string): string[] => {
   const normalized = raw.replace(/\r/g, '')
   const rows = normalized.split('\n')
 
-  // Keep rows exactly as authored (including empty ones and leading/trailing '.').
+  // Keep rows exactly as authored (including empty ones and leading/trailing spaces).
   // Drop only one trailing empty line that appears from file ending newline.
   if (rows.length > 0 && rows.at(-1) === '') {
     rows.pop()
@@ -48,7 +48,7 @@ for (const [filePath, raw] of Object.entries(glyphModules)) {
 }
 
 if (!chars[' ']) {
-  chars[' '] = ['...']
+  chars[' '] = ['   ']
 }
 
 export const THERMAL_FONT: ThermalFont = {
