@@ -1,4 +1,4 @@
-﻿export type ElementType = 'thermal_text' | 'text' | 'code' | 'image' | 'line'
+﻿export type ElementType = 'text' | 'code' | 'image' | 'line'
 export type DataSource = 'static' | 'dynamic'
 export type TextAlign = 'left' | 'center' | 'right'
 export type BarcodeType =
@@ -21,15 +21,6 @@ export interface PositionedElement extends BaseElement {
   y: number
   width: number
   height: number
-}
-
-export interface ThermalTextElement extends PositionedElement {
-  type: 'thermal_text'
-  staticValue: string
-  scale: number
-  letterSpacing: number
-  align: TextAlign
-  bold: boolean
 }
 
 export interface TextElement extends PositionedElement {
@@ -65,7 +56,6 @@ export interface LineElement extends BaseElement {
 }
 
 export type LabelElement =
-  | ThermalTextElement
   | TextElement
   | CodeElement
   | ImageElement

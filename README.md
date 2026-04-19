@@ -29,8 +29,7 @@ npm run preview
 ## Архитектура
 
 - `src/composables/useLabelEditor.ts` — состояние редактора и действия
-- `src/domain/` — типы, фабрики элементов, утилиты, растеризация, thermal-font
-- `src/domain/thermal-font/glyphs/*.glyph.txt` — редактирование матричных символов построчно через `.` и `#`
+- `src/domain/` — типы, фабрики элементов, утилиты, растеризация
 - `src/components/layout/ToolbarHeader.vue` — верхний тулбар
 - `src/components/panels/LeftSidebar.vue` — CSV и слои
 - `src/components/editor/CanvasWorkspace.vue` — рабочее полотно и drag/resize

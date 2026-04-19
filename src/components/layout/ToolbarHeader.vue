@@ -78,8 +78,7 @@ header.app-header
         input(v-model.number='heightInput' type='number' min='20' max='800' @change='applySize')
 
     .toolbar-group
-      button.btn.btn--accent(@click='add("thermal_text")') + ТермоТекст
-      button.btn(@click='add("text")') + Текст
+      button.btn.btn--accent(@click='add("text")') + Текст
       button.btn(@click='add("code")') + Код
       button.btn(@click='add("image")') + Карт
       button.btn(@click='add("line")') + Линия

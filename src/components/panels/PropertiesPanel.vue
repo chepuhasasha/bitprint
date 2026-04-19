@@ -95,7 +95,7 @@ aside.properties
       label.field(v-if='selectedElement.dataSource === "static"')
         span Значение
         textarea(
-          :rows='selectedElement.type.includes("text") ? 2 : 1'
+          :rows='selectedElement.type === "text" ? 2 : 1'
           :value='selectedElement.staticValue'
           @input='onStringUpdate("staticValue", $event)'
         )
@@ -122,17 +122,9 @@ aside.properties
           span Высота
           input(type='number' :value='selectedElement.height' @change='onNumberUpdate("height", $event)')
 
-    .block(v-if='selectedElement.type === "thermal_text" || selectedElement.type === "text"')
+    .block(v-if='selectedElement.type === "text"')
       h3 Стиль текста
-      .inline(v-if='selectedElement.type === "thermal_text"')
-        label.field
-          span Масштаб
-          input(type='number' min='1' :value='selectedElement.scale' @change='onNumberUpdate("scale", $event)')
-        label.field
-          span Жирный
-          select(:value='String(selectedElement.bold)' @change='onStringUpdate("bold", $event)')
-            option(v-for='option in boldOptions' :key='option.value' :value='option.value') {{ option.label }}
-      .inline(v-else)
+      .inline
         label.field
           span Размер
           input(type='number' min='1' :value='selectedElement.fontSize' @change='onNumberUpdate("fontSize", $event)')
@@ -141,16 +133,7 @@ aside.properties
           select(:value='String(selectedElement.bold)' @change='onStringUpdate("bold", $event)')
             option(v-for='option in boldOptions' :key='option.value' :value='option.value') {{ option.label }}
 
-      .inline(v-if='selectedElement.type === "thermal_text"')
-        label.field
-          span Отступ
-          input(type='number' min='0' :value='selectedElement.letterSpacing' @change='onNumberUpdate("letterSpacing", $event)')
-        label.field
-          span Выравнивание
-          select(:value='selectedElement.align' @change='onStringUpdate("align", $event)')
-            option(v-for='option in TEXT_ALIGN_OPTIONS' :key='option.value' :value='option.value') {{ option.label }}
-
-      label.field(v-else)
+      label.field
         span Выравнивание
         select(:value='selectedElement.align' @change='onStringUpdate("align", $event)')
           option(v-for='option in TEXT_ALIGN_OPTIONS' :key='option.value' :value='option.value') {{ option.label }}

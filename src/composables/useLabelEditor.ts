@@ -18,8 +18,6 @@ const NUMERIC_PROPS = new Set([
   'x2',
   'y2',
   'thickness',
-  'scale',
-  'letterSpacing',
 ])
 
 const syncLineDimensions = (element: LineElement): void => {

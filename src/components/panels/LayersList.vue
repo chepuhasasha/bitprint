@@ -13,7 +13,6 @@ const emit = defineEmits<{
 
 const icons: Record<LabelElement['type'], string> = {
   text: '📝',
-  thermal_text: '🔠',
   code: '🔳',
   line: '➖',
   image: '🖼️',

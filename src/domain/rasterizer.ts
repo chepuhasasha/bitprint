@@ -1,22 +1,7 @@
 ﻿import bwipjs from 'bwip-js'
 
-import { THERMAL_FONT } from './thermal-font'
-import type { CodeElement, LabelElement, LineElement, TextElement, ThermalTextElement } from './types'
+import type { CodeElement, LabelElement, LineElement, TextElement } from './types'
 import { normalizeGS1 } from './utils'
-
-const fontChars = THERMAL_FONT.chars as Record<string, readonly string[]>
-
-const getGlyph = (char: string): readonly string[] => {
-  return fontChars[char] ?? fontChars[' ']
-}
-
-const getGlyphWidth = (rows: readonly string[]): number => {
-  let width = 0
-  for (let i = 0; i < rows.length; i += 1) {
-    width = Math.max(width, rows[i].length)
-  }
-  return width
-}
 
 export const applyThreshold = (canvas: HTMLCanvasElement): void => {
   const ctx = canvas.getContext('2d')
@@ -45,112 +30,6 @@ export const applyThreshold = (canvas: HTMLCanvasElement): void => {
   }
 
   ctx.putImageData(imageData, 0, 0)
-}
-
-export const renderThermalText = (element: ThermalTextElement, text: string): HTMLCanvasElement => {
-  const canvas = document.createElement('canvas')
-  canvas.width = element.width
-  canvas.height = element.height
-
-  const ctx = canvas.getContext('2d')
-  if (!ctx) {
-    return canvas
-  }
-
-  ctx.fillStyle = 'black'
-
-  const scale = element.scale || 1
-  const letterSpacing = element.letterSpacing ?? 1
-  const tokens = String(text).split(/(\s+)/)
-
-  const lines: string[][] = []
-  let currentLine: string[] = []
-  let currentWidth = 0
-
-  for (let tokenIndex = 0; tokenIndex < tokens.length; tokenIndex += 1) {
-    const token = tokens[tokenIndex]
-
-    if (token === '\n') {
-      lines.push(currentLine)
-      currentLine = []
-      currentWidth = 0
-      continue
-    }
-
-    let tokenWidth = 0
-    for (let i = 0; i < token.length; i += 1) {
-      const glyphRows = getGlyph(token[i])
-      const glyphWidth = getGlyphWidth(glyphRows)
-      tokenWidth += (glyphWidth + letterSpacing) * scale
-    }
-
-    if (currentWidth + tokenWidth > element.width && currentLine.length > 0) {
-      if (token.trim() !== '') {
-        lines.push(currentLine)
-        currentLine = [token]
-        currentWidth = tokenWidth
-      }
-      continue
-    }
-
-    currentLine.push(token)
-    currentWidth += tokenWidth
-  }
-
-  if (currentLine.length > 0) {
-    lines.push(currentLine)
-  }
-
-  const lineHeight = (THERMAL_FONT.height + 1) * scale
-  let currentY = 0
-
-  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
-    const line = lines[lineIndex].join('').trimEnd()
-    const glyphs: Array<{ rows: readonly string[]; width: number }> = []
-
-    let lineWidth = 0
-    for (let i = 0; i < line.length; i += 1) {
-      const rows = getGlyph(line[i])
-      const width = getGlyphWidth(rows)
-      glyphs.push({ rows, width })
-      lineWidth += (width + letterSpacing) * scale
-    }
-
-    if (lineWidth > 0) {
-      lineWidth -= letterSpacing * scale
-    }
-
-    let currentX = 0
-    if (element.align === 'center') {
-      currentX = Math.max(0, Math.floor((element.width - lineWidth) / 2))
-    }
-
-    if (element.align === 'right') {
-      currentX = Math.max(0, element.width - lineWidth)
-    }
-
-    for (let glyphIndex = 0; glyphIndex < glyphs.length; glyphIndex += 1) {
-      const glyph = glyphs[glyphIndex]
-
-      for (let rowIndex = 0; rowIndex < THERMAL_FONT.height; rowIndex += 1) {
-        const row = glyph.rows[rowIndex] ?? ''
-        for (let px = 0; px < glyph.width; px += 1) {
-          if (row[px] === '#') {
-            ctx.fillRect(currentX + px * scale, currentY + rowIndex * scale, scale, scale)
-            if (element.bold) {
-              ctx.fillRect(currentX + px * scale + 1, currentY + rowIndex * scale, scale, scale)
-            }
-          }
-        }
-      }
-
-      currentX += (glyph.width + letterSpacing) * scale
-    }
-
-    currentY += lineHeight
-  }
-
-  return canvas
 }
 
 export const renderSystemText = (element: TextElement, text: string): HTMLCanvasElement => {
@@ -346,10 +225,6 @@ export const renderElement = async (
     const boxW = Math.abs(element.x2 - element.x1) + pad * 2
     const boxH = Math.abs(element.y2 - element.y1) + pad * 2
     return renderLine(element, boxW, boxH, boxX, boxY)
-  }
-
-  if (element.type === 'thermal_text') {
-    return renderThermalText(element, value)
   }
 
   if (element.type === 'text') {

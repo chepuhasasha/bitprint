@@ -7,16 +7,15 @@ export const createDefaultElements = (): LabelElement[] => {
   return [
     {
       id: uid(),
-      type: 'thermal_text',
+      type: 'text',
       dataSource: 'static',
-      staticValue: 'Абвгд Abcd\n123 Матрица',
+      staticValue: 'Пример текста\n123',
       csvColumn: '0',
       x: 10,
       y: 10,
       width: 145,
       height: 40,
-      scale: 1,
-      letterSpacing: 1,
+      fontSize: 16,
       align: 'center',
       bold: false,
     },
@@ -42,22 +41,6 @@ export const createElementByType = (type: ElementType): LabelElement => {
     type,
     dataSource: 'static' as DataSource,
     csvColumn: '0',
-  }
-
-  if (type === 'thermal_text') {
-    return {
-      ...base,
-      type,
-      staticValue: 'Термо Текст',
-      x: 10,
-      y: 10,
-      width: 100,
-      height: 20,
-      scale: 1,
-      letterSpacing: 1,
-      align: 'left',
-      bold: false,
-    }
   }
 
   if (type === 'text') {
@@ -143,7 +126,7 @@ const isBarcodeType = (value: unknown): value is BarcodeType => {
 export const normalizeLoadedElement = (raw: Record<string, unknown>): LabelElement | null => {
   const type = raw.type as ElementType
 
-  if (!['thermal_text', 'text', 'code', 'image', 'line'].includes(String(type))) {
+  if (!['text', 'code', 'image', 'line'].includes(String(type))) {
     return null
   }
 
@@ -168,19 +151,6 @@ export const normalizeLoadedElement = (raw: Record<string, unknown>): LabelEleme
     y: parseNumber(raw.y, 10),
     width: Math.max(1, parseNumber(raw.width, type === 'code' ? 60 : 100)),
     height: Math.max(1, parseNumber(raw.height, type === 'code' ? 60 : 20)),
-  }
-
-  if (type === 'thermal_text') {
-    return {
-      ...common,
-      ...layout,
-      type,
-      staticValue: String(raw.staticValue ?? 'Термо Текст'),
-      scale: Math.max(1, parseNumber(raw.scale, 1)),
-      letterSpacing: Math.max(0, parseNumber(raw.letterSpacing, 1)),
-      align: raw.align === 'center' || raw.align === 'right' ? raw.align : 'left',
-      bold: Boolean(raw.bold),
-    }
   }
 
   if (type === 'text') {
