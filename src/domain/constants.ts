@@ -1,5 +1,19 @@
 ﻿export const CANVAS_SCALE = 3
-export const DOTS_PER_MM = 8
+export const DEFAULT_DPI = 203
+export const MM_PER_INCH = 25.4
+
+export const getDotsPerMm = (dpi: number): number => {
+  const normalizedDpi = Number.isFinite(dpi) && dpi > 0 ? dpi : DEFAULT_DPI
+  return normalizedDpi / MM_PER_INCH
+}
+
+export const dotsToMm = (dots: number, dpi: number): number => {
+  return dots / getDotsPerMm(dpi)
+}
+
+export const mmToDots = (mm: number, dpi: number): number => {
+  return Math.round(mm * getDotsPerMm(dpi))
+}
 
 export const DEFAULT_LABEL_SIZE = {
   width: 165,

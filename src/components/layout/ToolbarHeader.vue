@@ -1,9 +1,11 @@
 ﻿<script setup lang="ts">
 import { ref, watch } from 'vue'
 
+import { DEFAULT_DPI, dotsToMm, mmToDots } from '../../domain/constants'
 import type { ElementType } from '../../domain/types'
 
 const props = defineProps<{
+  dpi: number
   width: number
   height: number
   printInProgress: boolean
@@ -11,6 +13,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
+  (event: 'update-dpi', payload: number): void
   (event: 'update-size', payload: { width: number; height: number }): void
   (event: 'add-element', payload: ElementType): void
   (event: 'save-project'): void
@@ -18,23 +21,65 @@ const emit = defineEmits<{
   (event: 'print'): void
 }>()
 
-const widthInput = ref(props.width)
-const heightInput = ref(props.height)
+const widthDotsInput = ref(props.width)
+const heightDotsInput = ref(props.height)
+const widthMmInput = ref(Number(dotsToMm(props.width, props.dpi).toFixed(2)))
+const heightMmInput = ref(Number(dotsToMm(props.height, props.dpi).toFixed(2)))
+const dpiInput = ref(props.dpi)
 const projectInputRef = ref<HTMLInputElement | null>(null)
 
+const normalizePositiveInt = (value: unknown, fallback: number): number => {
+  const parsed = Math.round(Number(value))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const normalizePositiveFloat = (value: unknown, fallback: number): number => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const toRoundedMm = (dots: number, dpi: number): number => {
+  return Number(dotsToMm(dots, dpi).toFixed(2))
+}
+
 watch(
-  () => [props.width, props.height],
-  ([nextWidth, nextHeight]) => {
-    widthInput.value = nextWidth
-    heightInput.value = nextHeight
+  () => [props.width, props.height, props.dpi],
+  ([nextWidth, nextHeight, nextDpi]) => {
+    widthDotsInput.value = nextWidth
+    heightDotsInput.value = nextHeight
+    dpiInput.value = nextDpi
+    widthMmInput.value = toRoundedMm(nextWidth, nextDpi)
+    heightMmInput.value = toRoundedMm(nextHeight, nextDpi)
   },
+  { immediate: true },
 )
 
-const applySize = (): void => {
+const applyDotsSize = (): void => {
+  const nextWidth = Math.max(1, normalizePositiveInt(widthDotsInput.value, props.width))
+  const nextHeight = Math.max(1, normalizePositiveInt(heightDotsInput.value, props.height))
+
   emit('update-size', {
-    width: widthInput.value,
-    height: heightInput.value,
+    width: nextWidth,
+    height: nextHeight,
   })
+}
+
+const applyMmSize = (): void => {
+  const dpi = normalizePositiveInt(props.dpi, DEFAULT_DPI)
+  const fallbackWidthMm = toRoundedMm(props.width, dpi)
+  const fallbackHeightMm = toRoundedMm(props.height, dpi)
+  const nextWidthMm = normalizePositiveFloat(widthMmInput.value, fallbackWidthMm)
+  const nextHeightMm = normalizePositiveFloat(heightMmInput.value, fallbackHeightMm)
+
+  emit('update-size', {
+    width: Math.max(1, mmToDots(nextWidthMm, dpi)),
+    height: Math.max(1, mmToDots(nextHeightMm, dpi)),
+  })
+}
+
+const applyDpi = (): void => {
+  const nextDpi = normalizePositiveInt(dpiInput.value, props.dpi)
+  emit('update-dpi', nextDpi)
 }
 
 const triggerProjectInput = (): void => {
@@ -68,14 +113,29 @@ header.app-header
     h1.brand__title PixelPerfect Label Engine
 
   .toolbar
-    .toolbar-group.toolbar-size
+    .toolbar-group.toolbar-size-card
+      span.group-label DPI
+      label.inline-field
+        span D
+        input(v-model.number='dpiInput' type='number' min='1' max='2400' @change='applyDpi')
+
+    .toolbar-group.toolbar-size-card
       span.group-label Размер (точки)
       label.inline-field
         span Ш
-        input(v-model.number='widthInput' type='number' min='20' max='800' @change='applySize')
+        input(v-model.number='widthDotsInput' type='number' min='1' max='10000' @change='applyDotsSize')
       label.inline-field
         span В
-        input(v-model.number='heightInput' type='number' min='20' max='800' @change='applySize')
+        input(v-model.number='heightDotsInput' type='number' min='1' max='10000' @change='applyDotsSize')
+
+    .toolbar-group.toolbar-size-card
+      span.group-label Размер (мм)
+      label.inline-field
+        span Ш
+        input(v-model.number='widthMmInput' type='number' min='0.1' max='1000' step='0.1' @change='applyMmSize')
+      label.inline-field
+        span В
+        input(v-model.number='heightMmInput' type='number' min='0.1' max='1000' step='0.1' @change='applyMmSize')
 
     .toolbar-group
       button.btn.btn--accent(@click='add("text")') + Текст
@@ -139,7 +199,7 @@ header.app-header
   padding-left: 0;
 }
 
-.toolbar-size {
+.toolbar-size-card {
   background: #edf4ff;
   border: 1px solid #c5d8ff;
   border-radius: 0.4rem;
@@ -169,7 +229,7 @@ header.app-header
   font-weight: 700;
   padding: 0.2rem 0.35rem;
   text-align: center;
-  width: 3.6rem;
+  width: 4.5rem;
 }
 
 .btn,

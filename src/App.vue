@@ -5,7 +5,7 @@ import CanvasWorkspace from './components/editor/CanvasWorkspace.vue'
 import ToolbarHeader from './components/layout/ToolbarHeader.vue'
 import LeftSidebar from './components/panels/LeftSidebar.vue'
 import PropertiesPanel from './components/panels/PropertiesPanel.vue'
-import { DOTS_PER_MM } from './domain/constants'
+import { dotsToMm } from './domain/constants'
 import type { LabelElement } from './domain/types'
 import { useLabelEditor } from './composables/useLabelEditor'
 
@@ -25,10 +25,10 @@ onMounted(() => {
 })
 
 watch(
-  () => [editor.state.width, editor.state.height],
-  ([width, height]) => {
-    const mmW = (width / DOTS_PER_MM).toFixed(1)
-    const mmH = (height / DOTS_PER_MM).toFixed(1)
+  () => [editor.state.width, editor.state.height, editor.state.dpi],
+  ([width, height, dpi]) => {
+    const mmW = dotsToMm(width, dpi).toFixed(1)
+    const mmH = dotsToMm(height, dpi).toFixed(1)
 
     let style = document.getElementById('print-style') as HTMLStyleElement | null
     if (!style) {
@@ -70,10 +70,12 @@ const onPrint = async (): Promise<void> => {
 <template lang="pug">
 .main-app
   ToolbarHeader(
+    :dpi='editor.state.dpi'
     :width='editor.state.width'
     :height='editor.state.height'
     :print-in-progress='editor.printInProgress.value'
     :print-label='printLabel'
+    @update-dpi='editor.setDpi'
     @update-size='editor.setCanvasSize($event.width, $event.height)'
     @add-element='editor.addElement'
     @save-project='editor.saveProject()'
@@ -91,6 +93,7 @@ const onPrint = async (): Promise<void> => {
     )
 
     CanvasWorkspace(
+      :dpi='editor.state.dpi'
       :width='editor.state.width'
       :height='editor.state.height'
       :elements='editor.state.elements'

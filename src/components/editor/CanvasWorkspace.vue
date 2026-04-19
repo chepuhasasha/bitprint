@@ -1,7 +1,7 @@
 ﻿<script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-import { CANVAS_SCALE, DOTS_PER_MM } from '../../domain/constants'
+import { dotsToMm } from '../../domain/constants'
 import { renderElement } from '../../domain/rasterizer'
 import type { LabelElement, LineElement } from '../../domain/types'
 import { clamp, getElementBox } from '../../domain/utils'
@@ -36,6 +36,7 @@ interface LinePointDrag {
 type DragState = MoveElementDrag | ResizeDrag | LinePointDrag
 
 const props = defineProps<{
+  dpi: number
   width: number
   height: number
   elements: LabelElement[]
@@ -51,7 +52,12 @@ const emit = defineEmits<{
 
 const renderedSources = ref<Record<string, string>>({})
 const dragState = ref<DragState | null>(null)
+const workspaceRef = ref<HTMLElement | null>(null)
+const workspaceViewport = ref({ width: 1, height: 1 })
+const MIN_CANVAS_SCALE = 0.1
+const FALLBACK_CANVAS_SCALE = 1
 let renderTicket = 0
+let workspaceResizeObserver: ResizeObserver | null = null
 
 const selectedElement = computed(() => {
   return props.elements.find((element) => element.id === props.selectedId) ?? null
@@ -65,15 +71,50 @@ const selectedBox = computed(() => {
 })
 
 const sizeLabel = computed(() => {
-  const mmW = (props.width / DOTS_PER_MM).toFixed(1)
-  const mmH = (props.height / DOTS_PER_MM).toFixed(1)
+  const mmW = dotsToMm(props.width, props.dpi).toFixed(1)
+  const mmH = dotsToMm(props.height, props.dpi).toFixed(1)
   return `Матрица: ${props.width} × ${props.height} точек (≈ ${mmW} × ${mmH} мм)`
+})
+
+const parsePx = (value: string): number => {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const updateWorkspaceViewport = (): void => {
+  const workspace = workspaceRef.value
+  if (!workspace) {
+    return
+  }
+
+  const styles = window.getComputedStyle(workspace)
+  const horizontalPadding = parsePx(styles.paddingLeft) + parsePx(styles.paddingRight)
+  const verticalPadding = parsePx(styles.paddingTop) + parsePx(styles.paddingBottom)
+  const indicatorReserve = 40
+
+  workspaceViewport.value = {
+    width: Math.max(1, workspace.clientWidth - horizontalPadding),
+    height: Math.max(1, workspace.clientHeight - verticalPadding - indicatorReserve),
+  }
+}
+
+const canvasScale = computed(() => {
+  const fitByWidth = workspaceViewport.value.width / props.width
+  const fitByHeight = workspaceViewport.value.height / props.height
+  const fitScale = Math.min(fitByWidth, fitByHeight)
+
+  if (!Number.isFinite(fitScale) || fitScale <= 0) {
+    return FALLBACK_CANVAS_SCALE
+  }
+
+  return Math.max(MIN_CANVAS_SCALE, fitScale)
 })
 
 const labelStyle = computed(() => {
   return {
     width: `${props.width}px`,
     height: `${props.height}px`,
+    transform: `scale(${canvasScale.value})`,
   }
 })
 
@@ -177,8 +218,22 @@ const stopDrag = (): void => {
   window.removeEventListener('mouseup', stopDrag)
 }
 
+onMounted(() => {
+  updateWorkspaceViewport()
+  if (workspaceRef.value) {
+    workspaceResizeObserver = new ResizeObserver(() => {
+      updateWorkspaceViewport()
+    })
+    workspaceResizeObserver.observe(workspaceRef.value)
+  }
+  window.addEventListener('resize', updateWorkspaceViewport)
+})
+
 onBeforeUnmount(() => {
   stopDrag()
+  workspaceResizeObserver?.disconnect()
+  workspaceResizeObserver = null
+  window.removeEventListener('resize', updateWorkspaceViewport)
 })
 
 const onMouseMove = (event: MouseEvent): void => {
@@ -187,8 +242,9 @@ const onMouseMove = (event: MouseEvent): void => {
     return
   }
 
-  const dx = (event.clientX - current.startClientX) / CANVAS_SCALE
-  const dy = (event.clientY - current.startClientY) / CANVAS_SCALE
+  const scale = canvasScale.value || FALLBACK_CANVAS_SCALE
+  const dx = (event.clientX - current.startClientX) / scale
+  const dy = (event.clientY - current.startClientY) / scale
 
   if (current.mode === 'move-element') {
     const element = props.elements.find((item) => item.id === current.id)
@@ -331,7 +387,7 @@ const onLinePointMouseDown = (event: MouseEvent, point: 1 | 2): void => {
 </script>
 
 <template lang="pug">
-section.workspace#editor-workspace
+section.workspace#editor-workspace(ref='workspaceRef')
   #label-canvas(:style='labelStyle')
     .grid-background
 
@@ -390,9 +446,8 @@ section.workspace#editor-workspace
   image-rendering: pixelated;
   overflow: visible;
   position: relative;
-  transform: scale(3);
   transform-origin: center center;
-  transition: width 0.2s, height 0.2s;
+  transition: width 0.2s, height 0.2s, transform 0.2s;
 }
 
 .grid-background {

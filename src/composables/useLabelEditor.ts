@@ -1,7 +1,7 @@
 ﻿import Papa from 'papaparse'
 import { computed, reactive, ref } from 'vue'
 
-import { DEFAULT_LABEL_SIZE, DOTS_PER_MM } from '../domain/constants'
+import { DEFAULT_DPI, DEFAULT_LABEL_SIZE, dotsToMm } from '../domain/constants'
 import { createDefaultElements, createElementByType, normalizeLoadedElement } from '../domain/factories'
 import { renderElement } from '../domain/rasterizer'
 import type { EditorState, ElementType, LabelElement, LineElement } from '../domain/types'
@@ -43,6 +43,7 @@ const coercePropValue = (key: string, value: unknown): unknown => {
 
 export const useLabelEditor = () => {
   const state = reactive<EditorState>({
+    dpi: DEFAULT_DPI,
     width: DEFAULT_LABEL_SIZE.width,
     height: DEFAULT_LABEL_SIZE.height,
     elements: [],
@@ -62,8 +63,8 @@ export const useLabelEditor = () => {
 
   const mmSize = computed(() => {
     return {
-      width: (state.width / DOTS_PER_MM).toFixed(1),
-      height: (state.height / DOTS_PER_MM).toFixed(1),
+      width: dotsToMm(state.width, state.dpi).toFixed(1),
+      height: dotsToMm(state.height, state.dpi).toFixed(1),
     }
   })
 
@@ -75,6 +76,10 @@ export const useLabelEditor = () => {
   const setCanvasSize = (width: unknown, height: unknown): void => {
     state.width = Math.max(1, parseNumber(width, DEFAULT_LABEL_SIZE.width))
     state.height = Math.max(1, parseNumber(height, DEFAULT_LABEL_SIZE.height))
+  }
+
+  const setDpi = (dpi: unknown): void => {
+    state.dpi = Math.max(1, parseNumber(dpi, DEFAULT_DPI))
   }
 
   const addElement = (type: ElementType): void => {
@@ -158,6 +163,7 @@ export const useLabelEditor = () => {
 
   const saveProject = (): void => {
     const payload = {
+      dpi: state.dpi,
       width: state.width,
       height: state.height,
       elements: state.elements,
@@ -173,11 +179,13 @@ export const useLabelEditor = () => {
     try {
       const text = await file.text()
       const data = JSON.parse(text) as {
+        dpi?: number
         width?: number
         height?: number
         elements?: Record<string, unknown>[]
       }
 
+      setDpi(data.dpi ?? DEFAULT_DPI)
       setCanvasSize(data.width ?? DEFAULT_LABEL_SIZE.width, data.height ?? DEFAULT_LABEL_SIZE.height)
 
       if (Array.isArray(data.elements)) {
@@ -261,6 +269,7 @@ export const useLabelEditor = () => {
     printProgressText,
     initDefaults,
     setCanvasSize,
+    setDpi,
     addElement,
     deleteElement,
     selectElement,

@@ -67,6 +67,7 @@ export interface CsvState {
 }
 
 export interface EditorState {
+  dpi: number
   width: number
   height: number
   elements: LabelElement[]
