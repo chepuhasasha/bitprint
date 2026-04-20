@@ -81,12 +81,15 @@ const onPrint = async (): Promise<void> => {
     LeftSidebar(
       :elements='editor.state.elements'
       :selected-id='editor.state.selectedId'
+      :manual-label-count='editor.state.manualLabelCount'
+      :has-csv='Boolean(editor.state.csv.fileName)'
       :print-sheet='editor.state.printSheet'
       :print-grid='editor.printGrid.value'
       @load-csv='onLoadCsv'
       @select-layer='editor.selectElement'
       @delete-layer='editor.deleteElement'
       @update-print-sheet='editor.updatePrintSheet'
+      @update-manual-label-count='editor.setManualLabelCount'
     )
 
     CanvasWorkspace(

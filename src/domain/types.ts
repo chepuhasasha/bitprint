@@ -62,6 +62,7 @@ export type LabelElement =
   | LineElement
 
 export interface CsvState {
+  fileName: string | null
   headers: string[]
   data: string[][]
 }
@@ -80,6 +81,7 @@ export interface PrintSheetSettings {
 export interface EditorState {
   labelWidthMm: number
   labelHeightMm: number
+  manualLabelCount: number
   printSheet: PrintSheetSettings
   elements: LabelElement[]
   selectedId: string | null

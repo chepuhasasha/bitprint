@@ -58,6 +58,18 @@ const parseNonNegativeFloat = (value: unknown, fallback: number): number => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
 }
 
+const normalizeCsvRows = (value: unknown): string[][] | null => {
+  if (!Array.isArray(value)) {
+    return null
+  }
+
+  const rows = value
+    .filter((row): row is unknown[] => Array.isArray(row))
+    .map((row) => row.map((cell) => String(cell ?? '')))
+
+  return rows.length > 0 ? rows : []
+}
+
 const mergePrintSheet = (
   current: PrintSheetSettings,
   patch: Partial<PrintSheetSettings>,
@@ -194,10 +206,12 @@ export const useLabelEditor = () => {
   const state = reactive<EditorState>({
     labelWidthMm: DEFAULT_LABEL_MM.width,
     labelHeightMm: DEFAULT_LABEL_MM.height,
+    manualLabelCount: 1,
     printSheet: { ...DEFAULT_PRINT_SHEET_SETTINGS },
     elements: [],
     selectedId: null,
     csv: {
+      fileName: null,
       headers: [],
       data: [],
     },
@@ -226,6 +240,11 @@ export const useLabelEditor = () => {
 
   const updatePrintSheet = (patch: Partial<PrintSheetSettings>): void => {
     state.printSheet = mergePrintSheet(state.printSheet, patch)
+  }
+
+  const setManualLabelCount = (count: unknown): void => {
+    const normalized = Math.floor(parsePositiveFloat(count, state.manualLabelCount))
+    state.manualLabelCount = Math.max(1, normalized)
   }
 
   const addElement = (type: ElementType): void => {
@@ -276,6 +295,8 @@ export const useLabelEditor = () => {
   }
 
   const loadCsv = async (file: File): Promise<void> => {
+    state.csv.fileName = file.name
+
     await new Promise<void>((resolve) => {
       Papa.parse<string[]>(file, {
         header: false,
@@ -312,8 +333,13 @@ export const useLabelEditor = () => {
       version: PROJECT_VERSION,
       labelWidthMm: state.labelWidthMm,
       labelHeightMm: state.labelHeightMm,
+      manualLabelCount: state.manualLabelCount,
       printSheet: state.printSheet,
       elements: state.elements,
+      csv: {
+        fileName: state.csv.fileName,
+        data: state.csv.data,
+      },
     }
 
     const link = document.createElement('a')
@@ -329,8 +355,13 @@ export const useLabelEditor = () => {
         version?: number
         labelWidthMm?: number
         labelHeightMm?: number
+        manualLabelCount?: number
         printSheet?: Partial<PrintSheetSettings>
         elements?: Record<string, unknown>[]
+        csv?: {
+          fileName?: unknown
+          data?: unknown
+        }
       }
 
       if (data.version !== PROJECT_VERSION) {
@@ -339,10 +370,21 @@ export const useLabelEditor = () => {
 
       const nextLabelWidthMm = parsePositiveFloat(data.labelWidthMm, DEFAULT_LABEL_MM.width)
       const nextLabelHeightMm = parsePositiveFloat(data.labelHeightMm, DEFAULT_LABEL_MM.height)
+      const nextManualLabelCount = Math.floor(parsePositiveFloat(data.manualLabelCount, 1))
 
       state.labelWidthMm = roundMm(nextLabelWidthMm)
       state.labelHeightMm = roundMm(nextLabelHeightMm)
+      state.manualLabelCount = Math.max(1, nextManualLabelCount)
       state.printSheet = mergePrintSheet(DEFAULT_PRINT_SHEET_SETTINGS, data.printSheet ?? {})
+
+      if (Object.prototype.hasOwnProperty.call(data, 'csv')) {
+        const csvRows = normalizeCsvRows(data.csv?.data)
+        const csvFileName = typeof data.csv?.fileName === 'string' ? data.csv.fileName : null
+
+        state.csv.fileName = csvFileName
+        state.csv.data = csvRows ?? []
+        state.csv.headers = state.csv.data.length > 0 ? state.csv.data[0].map((item) => String(item ?? '')) : []
+      }
 
       if (Array.isArray(data.elements)) {
         const normalized = data.elements
@@ -376,7 +418,10 @@ export const useLabelEditor = () => {
         return
       }
 
-      const rows = state.csv.data.length > 1 ? state.csv.data.slice(1) : [null]
+      const rows =
+        state.csv.data.length > 1
+          ? state.csv.data.slice(1)
+          : Array.from({ length: state.manualLabelCount }, () => null)
       const totalLabels = Math.max(1, rows.length)
       const totalPages = Math.ceil(totalLabels / grid.labelsPerPage)
 
@@ -453,6 +498,7 @@ export const useLabelEditor = () => {
     initDefaults,
     setLabelSizeMm,
     updatePrintSheet,
+    setManualLabelCount,
     addElement,
     deleteElement,
     selectElement,

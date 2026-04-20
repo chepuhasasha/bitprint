@@ -6,6 +6,8 @@ import type { LabelElement, PrintSheetSettings } from '../../domain/types'
 defineProps<{
   elements: LabelElement[]
   selectedId: string | null
+  manualLabelCount: number
+  hasCsv: boolean
   printSheet: PrintSheetSettings
   printGrid: PrintGrid
 }>()
@@ -15,6 +17,7 @@ const emit = defineEmits<{
   (event: 'select-layer', payload: string): void
   (event: 'delete-layer', payload: string): void
   (event: 'update-print-sheet', payload: Partial<PrintSheetSettings>): void
+  (event: 'update-manual-label-count', payload: number): void
 }>()
 
 const onCsvSelected = (event: Event): void => {
@@ -25,7 +28,6 @@ const onCsvSelected = (event: Event): void => {
   }
 
   emit('load-csv', file)
-  target.value = ''
 }
 
 const onPrintNumberChange = (key: keyof PrintSheetSettings, event: Event): void => {
@@ -34,12 +36,20 @@ const onPrintNumberChange = (key: keyof PrintSheetSettings, event: Event): void 
     [key]: Number(target.value),
   })
 }
+
+const onManualCountChange = (event: Event): void => {
+  const target = event.target as HTMLInputElement
+  emit('update-manual-label-count', Number(target.value))
+}
 </script>
 
 <template lang="pug">
 aside.left-sidebar
   h2.panel-title База данных (CSV)
   input.csv-input(type='file' accept='.csv,.txt' @change='onCsvSelected')
+  label.manual-count(v-if='!hasCsv')
+    span Кол-во без CSV
+    input(type='number' min='1' step='1' :value='manualLabelCount' @change='onManualCountChange')
 
   h2.panel-title Параметры A4 (мм)
   .print-sheet-settings
@@ -125,6 +135,25 @@ aside.left-sidebar
   font-weight: 700;
   margin-right: 0.4rem;
   padding: 0.25rem 0.4rem;
+}
+
+.manual-count {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.manual-count span {
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.manual-count input {
+  border: 1px solid #cbd5e1;
+  border-radius: 0.35rem;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.4rem;
 }
 
 .print-sheet-settings {
