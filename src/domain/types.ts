@@ -67,6 +67,15 @@ export interface CsvState {
   data: string[][]
 }
 
+export interface PdfLabelsState {
+  fileName: string | null
+  pageCount: number
+  pageWidthMm: number | null
+  pageHeightMm: number | null
+  pages: string[]
+  copies: number
+}
+
 export interface PrintSheetSettings {
   pageWidthMm: number
   pageHeightMm: number
@@ -86,4 +95,5 @@ export interface EditorState {
   elements: LabelElement[]
   selectedId: string | null
   csv: CsvState
+  pdf: PdfLabelsState
 }

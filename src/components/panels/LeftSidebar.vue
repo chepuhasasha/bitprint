@@ -8,12 +8,20 @@ defineProps<{
   selectedId: string | null
   manualLabelCount: number
   hasCsv: boolean
+  pdfFileName: string | null
+  pdfPageCount: number
+  pdfCopies: number
+  pdfLoading: boolean
+  pdfLoadingText: string
   printSheet: PrintSheetSettings
   printGrid: PrintGrid
 }>()
 
 const emit = defineEmits<{
   (event: 'load-csv', payload: File): void
+  (event: 'load-pdf', payload: File): void
+  (event: 'clear-pdf'): void
+  (event: 'update-pdf-copies', payload: number): void
   (event: 'select-layer', payload: string): void
   (event: 'delete-layer', payload: string): void
   (event: 'update-print-sheet', payload: Partial<PrintSheetSettings>): void
@@ -30,6 +38,17 @@ const onCsvSelected = (event: Event): void => {
   emit('load-csv', file)
 }
 
+const onPdfSelected = (event: Event): void => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) {
+    return
+  }
+
+  emit('load-pdf', file)
+  target.value = ''
+}
+
 const onPrintNumberChange = (key: keyof PrintSheetSettings, event: Event): void => {
   const target = event.target as HTMLInputElement
   emit('update-print-sheet', {
@@ -41,6 +60,11 @@ const onManualCountChange = (event: Event): void => {
   const target = event.target as HTMLInputElement
   emit('update-manual-label-count', Number(target.value))
 }
+
+const onPdfCopiesChange = (event: Event): void => {
+  const target = event.target as HTMLInputElement
+  emit('update-pdf-copies', Number(target.value))
+}
 </script>
 
 <template lang="pug">
@@ -50,6 +74,15 @@ aside.left-sidebar
   label.manual-count(v-if='!hasCsv')
     span Кол-во без CSV
     input(type='number' min='1' step='1' :value='manualLabelCount' @change='onManualCountChange')
+
+  h2.panel-title PDF этикетки
+  input.csv-input(type='file' accept='.pdf,application/pdf' :disabled='pdfLoading' @change='onPdfSelected')
+  p.pdf-loading(v-if='pdfLoading') {{ pdfLoadingText || 'Загрузка PDF...' }}
+  p.pdf-meta(v-else-if='pdfFileName') {{ pdfFileName }} ({{ pdfPageCount }} стр.)
+  label.manual-count(v-if='pdfFileName || pdfLoading')
+    span Копий каждой этикетки
+    input(type='number' min='1' step='1' :value='pdfCopies' :disabled='pdfLoading' @change='onPdfCopiesChange')
+  button.pdf-clear-btn(v-if='pdfFileName' :disabled='pdfLoading' @click='emit("clear-pdf")') Отключить PDF режим
 
   h2.panel-title Параметры A4 (мм)
   .print-sheet-settings
@@ -154,6 +187,37 @@ aside.left-sidebar
   border-radius: 0.35rem;
   font-size: 0.78rem;
   padding: 0.3rem 0.4rem;
+}
+
+.pdf-meta {
+  color: #1e3a8a;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin: 0;
+  word-break: break-word;
+}
+
+.pdf-loading {
+  color: #1d4ed8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.pdf-clear-btn {
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.35rem;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.45rem;
+}
+
+.pdf-clear-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .print-sheet-settings {

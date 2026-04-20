@@ -8,6 +8,7 @@ import {
 } from '../domain/constants'
 import { buildBarcodeSvgMarkup } from '../domain/barcode'
 import { createDefaultElements, createElementByType, normalizeLoadedElement } from '../domain/factories'
+import { loadPdfLabels as loadPdfPages } from '../domain/pdf'
 import { calculatePrintGrid, getGridLabelPosition, normalizePrintSheet } from '../domain/print'
 import type { EditorState, ElementType, LabelElement, LineElement, PrintSheetSettings } from '../domain/types'
 import { getElementValue, parseNumber } from '../domain/utils'
@@ -127,6 +128,18 @@ const createImageNode = (element: Extract<LabelElement, { type: 'image' }>, valu
   return node
 }
 
+const createPdfLabelNode = (source: string): HTMLElement => {
+  const node = document.createElement('img')
+  node.style.width = '100%'
+  node.style.height = '100%'
+  node.style.objectFit = 'contain'
+  node.style.display = 'block'
+  node.style.background = '#fff'
+  node.draggable = false
+  node.src = source
+  return node
+}
+
 const createLineNode = (element: Extract<LabelElement, { type: 'line' }>): HTMLElement => {
   const node = document.createElement('div')
   const dx = element.x2 - element.x1
@@ -215,10 +228,20 @@ export const useLabelEditor = () => {
       headers: [],
       data: [],
     },
+    pdf: {
+      fileName: null,
+      pageCount: 0,
+      pageWidthMm: null,
+      pageHeightMm: null,
+      pages: [],
+      copies: 1,
+    },
   })
 
   const printInProgress = ref(false)
   const printProgressText = ref('Печать A4')
+  const pdfLoading = ref(false)
+  const pdfLoadingText = ref('')
 
   const selectedElement = computed<LabelElement | null>(() => {
     return state.elements.find((element) => element.id === state.selectedId) ?? null
@@ -245,6 +268,11 @@ export const useLabelEditor = () => {
   const setManualLabelCount = (count: unknown): void => {
     const normalized = Math.floor(parsePositiveFloat(count, state.manualLabelCount))
     state.manualLabelCount = Math.max(1, normalized)
+  }
+
+  const setPdfCopies = (count: unknown): void => {
+    const normalized = Math.floor(parsePositiveFloat(count, state.pdf.copies))
+    state.pdf.copies = Math.max(1, normalized)
   }
 
   const addElement = (type: ElementType): void => {
@@ -328,6 +356,51 @@ export const useLabelEditor = () => {
     updateSelectedProp('staticValue', src)
   }
 
+  const clearPdfLabels = (): void => {
+    state.pdf.fileName = null
+    state.pdf.pageCount = 0
+    state.pdf.pageWidthMm = null
+    state.pdf.pageHeightMm = null
+    state.pdf.pages = []
+  }
+
+  const loadPdfLabels = async (file: File): Promise<void> => {
+    if (pdfLoading.value) {
+      return
+    }
+
+    pdfLoading.value = true
+    pdfLoadingText.value = 'Загрузка PDF...'
+
+    try {
+      const loaded = await loadPdfPages(file, (processedPages, totalPages) => {
+        pdfLoadingText.value =
+          totalPages > 0 ? `Загрузка PDF: ${processedPages}/${totalPages}` : 'Загрузка PDF...'
+      })
+
+      if (loaded.pageCount <= 0 || loaded.pageImages.length <= 0) {
+        throw new Error('pdf_has_no_pages')
+      }
+
+      state.pdf.fileName = file.name
+      state.pdf.pageCount = loaded.pageCount
+      state.pdf.pageWidthMm = loaded.pageWidthMm
+      state.pdf.pageHeightMm = loaded.pageHeightMm
+      state.pdf.pages = loaded.pageImages
+
+      if (loaded.pageWidthMm > 0 && loaded.pageHeightMm > 0) {
+        state.labelWidthMm = roundMm(loaded.pageWidthMm)
+        state.labelHeightMm = roundMm(loaded.pageHeightMm)
+      }
+    } catch {
+      clearPdfLabels()
+      alert('Не удалось прочитать PDF. Проверьте, что файл не поврежден и содержит страницы.')
+    } finally {
+      pdfLoading.value = false
+      pdfLoadingText.value = ''
+    }
+  }
+
   const saveProject = (): void => {
     const payload = {
       version: PROJECT_VERSION,
@@ -335,6 +408,7 @@ export const useLabelEditor = () => {
       labelHeightMm: state.labelHeightMm,
       manualLabelCount: state.manualLabelCount,
       printSheet: state.printSheet,
+      pdfCopies: state.pdf.copies,
       elements: state.elements,
       csv: {
         fileName: state.csv.fileName,
@@ -356,6 +430,7 @@ export const useLabelEditor = () => {
         labelWidthMm?: number
         labelHeightMm?: number
         manualLabelCount?: number
+        pdfCopies?: number
         printSheet?: Partial<PrintSheetSettings>
         elements?: Record<string, unknown>[]
         csv?: {
@@ -371,10 +446,12 @@ export const useLabelEditor = () => {
       const nextLabelWidthMm = parsePositiveFloat(data.labelWidthMm, DEFAULT_LABEL_MM.width)
       const nextLabelHeightMm = parsePositiveFloat(data.labelHeightMm, DEFAULT_LABEL_MM.height)
       const nextManualLabelCount = Math.floor(parsePositiveFloat(data.manualLabelCount, 1))
+      const nextPdfCopies = Math.floor(parsePositiveFloat(data.pdfCopies, 1))
 
       state.labelWidthMm = roundMm(nextLabelWidthMm)
       state.labelHeightMm = roundMm(nextLabelHeightMm)
       state.manualLabelCount = Math.max(1, nextManualLabelCount)
+      state.pdf.copies = Math.max(1, nextPdfCopies)
       state.printSheet = mergePrintSheet(DEFAULT_PRINT_SHEET_SETTINGS, data.printSheet ?? {})
 
       if (Object.prototype.hasOwnProperty.call(data, 'csv')) {
@@ -385,6 +462,8 @@ export const useLabelEditor = () => {
         state.csv.data = csvRows ?? []
         state.csv.headers = state.csv.data.length > 0 ? state.csv.data[0].map((item) => String(item ?? '')) : []
       }
+
+      clearPdfLabels()
 
       if (Array.isArray(data.elements)) {
         const normalized = data.elements
@@ -400,7 +479,7 @@ export const useLabelEditor = () => {
   }
 
   const executeBatchPrint = async (container: HTMLElement): Promise<void> => {
-    if (printInProgress.value) {
+    if (printInProgress.value || pdfLoading.value) {
       return
     }
 
@@ -418,11 +497,13 @@ export const useLabelEditor = () => {
         return
       }
 
+      const hasPdfMode = state.pdf.pages.length > 0
+      const pdfCopies = Math.max(1, Math.floor(state.pdf.copies))
       const rows =
         state.csv.data.length > 1
           ? state.csv.data.slice(1)
           : Array.from({ length: state.manualLabelCount }, () => null)
-      const totalLabels = Math.max(1, rows.length)
+      const totalLabels = hasPdfMode ? state.pdf.pages.length * pdfCopies : Math.max(1, rows.length)
       const totalPages = Math.ceil(totalLabels / grid.labelsPerPage)
 
       let renderedLabels = 0
@@ -446,8 +527,6 @@ export const useLabelEditor = () => {
         const pageEnd = Math.min(pageStart + grid.labelsPerPage, totalLabels)
 
         for (let labelIndex = pageStart; labelIndex < pageEnd; labelIndex += 1) {
-          const row = rows[labelIndex] ?? null
-
           const cellIndex = labelIndex - pageStart
           const position = getGridLabelPosition(
             cellIndex,
@@ -468,8 +547,16 @@ export const useLabelEditor = () => {
           labelBox.style.background = '#fff'
           labelBox.style.boxSizing = 'border-box'
 
-          const labelContent = createLabelDom(state.elements, (element) => getValue(element, row))
-          labelBox.appendChild(labelContent)
+          if (hasPdfMode) {
+            const sourcePageIndex = Math.floor(labelIndex / pdfCopies)
+            const pageImage = state.pdf.pages[sourcePageIndex] ?? ''
+            labelBox.appendChild(createPdfLabelNode(pageImage))
+          } else {
+            const row = rows[labelIndex] ?? null
+            const labelContent = createLabelDom(state.elements, (element) => getValue(element, row))
+            labelBox.appendChild(labelContent)
+          }
+
           page.appendChild(labelBox)
 
           renderedLabels += 1
@@ -495,10 +582,13 @@ export const useLabelEditor = () => {
     printGrid,
     printInProgress,
     printProgressText,
+    pdfLoading,
+    pdfLoadingText,
     initDefaults,
     setLabelSizeMm,
     updatePrintSheet,
     setManualLabelCount,
+    setPdfCopies,
     addElement,
     deleteElement,
     selectElement,
@@ -507,6 +597,8 @@ export const useLabelEditor = () => {
     getValue,
     loadCsv,
     loadImageForSelected,
+    loadPdfLabels,
+    clearPdfLabels,
     saveProject,
     loadProject,
     executeBatchPrint,
