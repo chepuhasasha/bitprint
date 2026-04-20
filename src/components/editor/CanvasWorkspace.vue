@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import { buildBarcodeSvgMarkup } from '../../domain/barcode'
 import { PREVIEW_PX_PER_MM, mmToPx, roundMm } from '../../domain/constants'
@@ -51,6 +51,35 @@ const emit = defineEmits<{
 
 const barcodeMarkup = ref<Record<string, string>>({})
 const dragState = ref<DragState | null>(null)
+const workspaceRef = ref<HTMLElement | null>(null)
+const workspaceSize = ref({
+  width: 0,
+  height: 0,
+})
+let workspaceResizeObserver: ResizeObserver | null = null
+
+const parsePixels = (value: string): number => {
+  const parsed = Number.parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const measureWorkspace = (): void => {
+  const workspace = workspaceRef.value
+  if (!workspace) {
+    return
+  }
+
+  const styles = window.getComputedStyle(workspace)
+  const paddingX = parsePixels(styles.paddingLeft) + parsePixels(styles.paddingRight)
+  const paddingY = parsePixels(styles.paddingTop) + parsePixels(styles.paddingBottom)
+  const frameReservePx = 16
+  const indicatorReservePx = 44
+
+  workspaceSize.value = {
+    width: Math.max(0, workspace.clientWidth - paddingX - frameReservePx),
+    height: Math.max(0, workspace.clientHeight - paddingY - indicatorReservePx - frameReservePx),
+  }
+}
 
 const selectedElement = computed(() => {
   return props.elements.find((element) => element.id === props.selectedId) ?? null
@@ -64,19 +93,40 @@ const selectedBox = computed(() => {
   return getElementBox(selectedElement.value)
 })
 
-const canvasWidthPx = computed(() => mmToPx(props.labelWidthMm, PREVIEW_PX_PER_MM))
-const canvasHeightPx = computed(() => mmToPx(props.labelHeightMm, PREVIEW_PX_PER_MM))
+const baseCanvasWidthPx = computed(() => mmToPx(props.labelWidthMm, PREVIEW_PX_PER_MM))
+const baseCanvasHeightPx = computed(() => mmToPx(props.labelHeightMm, PREVIEW_PX_PER_MM))
+
+const canvasScale = computed(() => {
+  const availableWidth = workspaceSize.value.width
+  const availableHeight = workspaceSize.value.height
+
+  if (availableWidth <= 0 || availableHeight <= 0) {
+    return 1
+  }
+
+  const widthScale = availableWidth / baseCanvasWidthPx.value
+  const heightScale = availableHeight / baseCanvasHeightPx.value
+
+  return Math.min(1, widthScale, heightScale)
+})
+
+const previewPxPerMm = computed(() => {
+  return Math.max(0.01, PREVIEW_PX_PER_MM * canvasScale.value)
+})
+
+const canvasWidthPx = computed(() => Math.max(1, Math.round(baseCanvasWidthPx.value * canvasScale.value)))
+const canvasHeightPx = computed(() => Math.max(1, Math.round(baseCanvasHeightPx.value * canvasScale.value)))
 
 const sizeLabel = computed(() => {
   return `Этикетка: ${props.labelWidthMm.toFixed(2)} × ${props.labelHeightMm.toFixed(2)} мм`
 })
 
 const mmToCanvasPx = (valueMm: number): number => {
-  return Math.round(valueMm * PREVIEW_PX_PER_MM)
+  return Math.round(valueMm * previewPxPerMm.value)
 }
 
 const pxToMm = (valuePx: number): number => {
-  return roundMm(valuePx / PREVIEW_PX_PER_MM)
+  return roundMm(valuePx / previewPxPerMm.value)
 }
 
 const labelStyle = computed(() => {
@@ -165,6 +215,26 @@ watch(
   },
   { deep: true, immediate: true },
 )
+
+onMounted(() => {
+  measureWorkspace()
+  window.addEventListener('resize', measureWorkspace)
+
+  if (typeof ResizeObserver === 'undefined' || !workspaceRef.value) {
+    return
+  }
+
+  workspaceResizeObserver = new ResizeObserver(() => {
+    measureWorkspace()
+  })
+  workspaceResizeObserver.observe(workspaceRef.value)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', measureWorkspace)
+  workspaceResizeObserver?.disconnect()
+  workspaceResizeObserver = null
+})
 
 const getDisplayValue = (element: LabelElement): string => {
   return props.getValue(element)
@@ -378,7 +448,7 @@ const onLinePointMouseDown = (event: MouseEvent, point: 1 | 2): void => {
 </script>
 
 <template lang="pug">
-section.workspace#editor-workspace
+section.workspace#editor-workspace(ref='workspaceRef')
   #label-canvas(:style='labelStyle')
     .grid-background
 
@@ -444,6 +514,7 @@ section.workspace#editor-workspace
   border: 1px solid #94a3b8;
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
   box-sizing: content-box;
+  flex-shrink: 0;
   overflow: visible;
   position: relative;
 }
