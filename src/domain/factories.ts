@@ -1,4 +1,5 @@
-﻿import { DEFAULT_IMAGE_DATA_URI } from './constants'
+import { DEFAULT_IMAGE_DATA_URI } from './constants'
+import { roundMm } from './constants'
 import type { BarcodeType, DataSource, ElementType, LabelElement, LineElement } from './types'
 
 const uid = (): string => `el_${Date.now()}_${Math.floor(Math.random() * 1000)}`
@@ -11,11 +12,11 @@ export const createDefaultElements = (): LabelElement[] => {
       dataSource: 'static',
       staticValue: 'Пример текста\n123',
       csvColumn: '0',
-      x: 10,
-      y: 10,
-      width: 145,
-      height: 40,
-      fontSize: 16,
+      x: 1,
+      y: 1,
+      width: 13,
+      height: 4,
+      fontSize: 2.8,
       align: 'center',
       bold: false,
     },
@@ -25,10 +26,10 @@ export const createDefaultElements = (): LabelElement[] => {
       dataSource: 'static',
       staticValue: '(01)04604060005904(21)J1Nq21',
       csvColumn: '0',
-      x: 42,
-      y: 60,
-      width: 80,
-      height: 80,
+      x: 3.5,
+      y: 6,
+      width: 8,
+      height: 8,
       codeType: 'gs1datamatrix',
       scaleMode: 'integer',
     },
@@ -48,11 +49,11 @@ export const createElementByType = (type: ElementType): LabelElement => {
       ...base,
       type,
       staticValue: 'Системный текст',
-      x: 10,
-      y: 10,
-      width: 100,
-      height: 20,
-      fontSize: 16,
+      x: 1,
+      y: 1,
+      width: 10,
+      height: 3,
+      fontSize: 2.6,
       align: 'left',
       bold: false,
     }
@@ -63,10 +64,10 @@ export const createElementByType = (type: ElementType): LabelElement => {
       ...base,
       type,
       staticValue: '123456789012',
-      x: 10,
-      y: 10,
-      width: 60,
-      height: 60,
+      x: 1,
+      y: 1,
+      width: 7,
+      height: 7,
       codeType: 'gs1datamatrix',
       scaleMode: 'integer',
     }
@@ -77,31 +78,31 @@ export const createElementByType = (type: ElementType): LabelElement => {
       ...base,
       type,
       staticValue: DEFAULT_IMAGE_DATA_URI,
-      x: 10,
-      y: 10,
-      width: 100,
-      height: 20,
+      x: 1,
+      y: 1,
+      width: 10,
+      height: 3,
     }
   }
 
   const line: LineElement = {
     ...base,
     type: 'line',
-    x1: 10,
-    y1: 10,
-    x2: 100,
-    y2: 10,
-    thickness: 2,
-    width: 90,
-    height: 2,
+    x1: 1,
+    y1: 1,
+    x2: 10,
+    y2: 1,
+    thickness: 0.3,
+    width: 9,
+    height: 0.3,
   }
 
   return line
 }
 
 const parseNumber = (value: unknown, fallback: number): number => {
-  const parsed = Math.round(Number(value))
-  return Number.isFinite(parsed) ? parsed : fallback
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? roundMm(parsed) : fallback
 }
 
 const normalizeCommon = (raw: Record<string, unknown>) => {
@@ -136,21 +137,21 @@ export const normalizeLoadedElement = (raw: Record<string, unknown>): LabelEleme
     return {
       ...common,
       type,
-      x1: parseNumber(raw.x1, 10),
-      y1: parseNumber(raw.y1, 10),
-      x2: parseNumber(raw.x2, 100),
-      y2: parseNumber(raw.y2, 10),
-      thickness: Math.max(1, parseNumber(raw.thickness, 2)),
-      width: parseNumber(raw.width, 90),
-      height: parseNumber(raw.height, 2),
+      x1: parseNumber(raw.x1, 1),
+      y1: parseNumber(raw.y1, 1),
+      x2: parseNumber(raw.x2, 10),
+      y2: parseNumber(raw.y2, 1),
+      thickness: Math.max(0.05, parseNumber(raw.thickness, 0.3)),
+      width: parseNumber(raw.width, 9),
+      height: parseNumber(raw.height, 0.3),
     }
   }
 
   const layout = {
-    x: parseNumber(raw.x, 10),
-    y: parseNumber(raw.y, 10),
-    width: Math.max(1, parseNumber(raw.width, type === 'code' ? 60 : 100)),
-    height: Math.max(1, parseNumber(raw.height, type === 'code' ? 60 : 20)),
+    x: parseNumber(raw.x, 1),
+    y: parseNumber(raw.y, 1),
+    width: Math.max(0.1, parseNumber(raw.width, type === 'code' ? 7 : 10)),
+    height: Math.max(0.1, parseNumber(raw.height, type === 'code' ? 7 : 3)),
   }
 
   if (type === 'text') {
@@ -159,7 +160,7 @@ export const normalizeLoadedElement = (raw: Record<string, unknown>): LabelEleme
       ...layout,
       type,
       staticValue: String(raw.staticValue ?? 'Системный текст'),
-      fontSize: Math.max(1, parseNumber(raw.fontSize, 16)),
+      fontSize: Math.max(0.5, parseNumber(raw.fontSize, 2.6)),
       align: raw.align === 'center' || raw.align === 'right' ? raw.align : 'left',
       bold: Boolean(raw.bold),
     }

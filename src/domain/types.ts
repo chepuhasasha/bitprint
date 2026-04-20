@@ -1,4 +1,4 @@
-﻿export type ElementType = 'text' | 'code' | 'image' | 'line'
+export type ElementType = 'text' | 'code' | 'image' | 'line'
 export type DataSource = 'static' | 'dynamic'
 export type TextAlign = 'left' | 'center' | 'right'
 export type BarcodeType =
@@ -66,10 +66,21 @@ export interface CsvState {
   data: string[][]
 }
 
+export interface PrintSheetSettings {
+  pageWidthMm: number
+  pageHeightMm: number
+  marginLeftMm: number
+  marginRightMm: number
+  marginTopMm: number
+  marginBottomMm: number
+  gapHorizontalMm: number
+  gapVerticalMm: number
+}
+
 export interface EditorState {
-  dpi: number
-  width: number
-  height: number
+  labelWidthMm: number
+  labelHeightMm: number
+  printSheet: PrintSheetSettings
   elements: LabelElement[]
   selectedId: string | null
   csv: CsvState

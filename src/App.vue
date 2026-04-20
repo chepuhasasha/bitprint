@@ -1,11 +1,10 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 
 import CanvasWorkspace from './components/editor/CanvasWorkspace.vue'
 import ToolbarHeader from './components/layout/ToolbarHeader.vue'
 import LeftSidebar from './components/panels/LeftSidebar.vue'
 import PropertiesPanel from './components/panels/PropertiesPanel.vue'
-import { dotsToMm } from './domain/constants'
 import type { LabelElement } from './domain/types'
 import { useLabelEditor } from './composables/useLabelEditor'
 
@@ -17,7 +16,7 @@ const printLabel = computed(() => {
     return editor.printProgressText.value || 'Генерация...'
   }
 
-  return 'Матричная Печать'
+  return 'Печать A4'
 })
 
 onMounted(() => {
@@ -25,11 +24,8 @@ onMounted(() => {
 })
 
 watch(
-  () => [editor.state.width, editor.state.height, editor.state.dpi],
-  ([width, height, dpi]) => {
-    const mmW = dotsToMm(width, dpi).toFixed(1)
-    const mmH = dotsToMm(height, dpi).toFixed(1)
-
+  () => [editor.state.printSheet.pageWidthMm, editor.state.printSheet.pageHeightMm],
+  ([pageWidthMm, pageHeightMm]) => {
     let style = document.getElementById('print-style') as HTMLStyleElement | null
     if (!style) {
       style = document.createElement('style')
@@ -37,7 +33,7 @@ watch(
       document.head.appendChild(style)
     }
 
-    style.innerHTML = `@media print { @page { size: ${mmW}mm ${mmH}mm; margin: 0; } .print-label-box { width: ${mmW}mm !important; height: ${mmH}mm !important; transform-origin: top left; } .print-label-box canvas { width: 100% !important; height: 100% !important; image-rendering: pixelated; } }`
+    style.innerHTML = `@media print { @page { size: ${pageWidthMm}mm ${pageHeightMm}mm; margin: 0; } #print-batch-container { width: ${pageWidthMm}mm !important; } .print-sheet { width: ${pageWidthMm}mm !important; height: ${pageHeightMm}mm !important; } }`
   },
   { immediate: true },
 )
@@ -70,13 +66,11 @@ const onPrint = async (): Promise<void> => {
 <template lang="pug">
 .main-app
   ToolbarHeader(
-    :dpi='editor.state.dpi'
-    :width='editor.state.width'
-    :height='editor.state.height'
+    :label-width-mm='editor.state.labelWidthMm'
+    :label-height-mm='editor.state.labelHeightMm'
     :print-in-progress='editor.printInProgress.value'
     :print-label='printLabel'
-    @update-dpi='editor.setDpi'
-    @update-size='editor.setCanvasSize($event.width, $event.height)'
+    @update-label-size='editor.setLabelSizeMm($event.widthMm, $event.heightMm)'
     @add-element='editor.addElement'
     @save-project='editor.saveProject()'
     @load-project='onLoadProject'
@@ -87,15 +81,17 @@ const onPrint = async (): Promise<void> => {
     LeftSidebar(
       :elements='editor.state.elements'
       :selected-id='editor.state.selectedId'
+      :print-sheet='editor.state.printSheet'
+      :print-grid='editor.printGrid.value'
       @load-csv='onLoadCsv'
       @select-layer='editor.selectElement'
       @delete-layer='editor.deleteElement'
+      @update-print-sheet='editor.updatePrintSheet'
     )
 
     CanvasWorkspace(
-      :dpi='editor.state.dpi'
-      :width='editor.state.width'
-      :height='editor.state.height'
+      :label-width-mm='editor.state.labelWidthMm'
+      :label-height-mm='editor.state.labelHeightMm'
       :elements='editor.state.elements'
       :csv-data='editor.state.csv.data'
       :selected-id='editor.state.selectedId'
@@ -142,6 +138,14 @@ const onPrint = async (): Promise<void> => {
 }
 
 @media print {
+  html,
+  body,
+  #app,
+  .main-app {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   .main-app > :not(#print-batch-container) {
     display: none !important;
   }
@@ -149,14 +153,12 @@ const onPrint = async (): Promise<void> => {
   #print-batch-container {
     display: block !important;
     margin: 0;
+    overflow: visible !important;
     padding: 0;
-    width: 100%;
   }
 
-  .print-label-box {
+  .print-sheet {
     background: #fff;
-    border: 0;
-    box-shadow: none;
     box-sizing: border-box;
     margin: 0;
     overflow: hidden;
@@ -164,17 +166,20 @@ const onPrint = async (): Promise<void> => {
     position: relative;
   }
 
+  .print-sheet:last-child {
+    page-break-after: auto;
+  }
+
+  .print-label-box {
+    background: #fff;
+    overflow: hidden;
+    position: absolute;
+  }
+
   * {
     -webkit-print-color-adjust: exact !important;
     box-sizing: border-box !important;
     print-color-adjust: exact !important;
-  }
-
-  canvas {
-    image-rendering: -moz-crisp-edges;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
-    image-rendering: pixelated;
   }
 }
 </style>

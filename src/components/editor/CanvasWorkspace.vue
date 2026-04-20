@@ -1,9 +1,9 @@
-﻿<script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
 
-import { dotsToMm } from '../../domain/constants'
-import { renderElement } from '../../domain/rasterizer'
-import type { LabelElement, LineElement } from '../../domain/types'
+import { buildBarcodeSvgMarkup } from '../../domain/barcode'
+import { PREVIEW_PX_PER_MM, mmToPx, roundMm } from '../../domain/constants'
+import type { CodeElement, LabelElement, LineElement, TextElement } from '../../domain/types'
 import { clamp, getElementBox } from '../../domain/utils'
 
 interface MoveElementDrag {
@@ -36,9 +36,8 @@ interface LinePointDrag {
 type DragState = MoveElementDrag | ResizeDrag | LinePointDrag
 
 const props = defineProps<{
-  dpi: number
-  width: number
-  height: number
+  labelWidthMm: number
+  labelHeightMm: number
   elements: LabelElement[]
   csvData: string[][]
   selectedId: string | null
@@ -50,14 +49,8 @@ const emit = defineEmits<{
   (event: 'patch-element', payload: { id: string; patch: Partial<LabelElement> }): void
 }>()
 
-const renderedSources = ref<Record<string, string>>({})
+const barcodeMarkup = ref<Record<string, string>>({})
 const dragState = ref<DragState | null>(null)
-const workspaceRef = ref<HTMLElement | null>(null)
-const workspaceViewport = ref({ width: 1, height: 1 })
-const MIN_CANVAS_SCALE = 0.1
-const FALLBACK_CANVAS_SCALE = 1
-let renderTicket = 0
-let workspaceResizeObserver: ResizeObserver | null = null
 
 const selectedElement = computed(() => {
   return props.elements.find((element) => element.id === props.selectedId) ?? null
@@ -67,64 +60,39 @@ const selectedBox = computed(() => {
   if (!selectedElement.value) {
     return null
   }
+
   return getElementBox(selectedElement.value)
 })
 
+const canvasWidthPx = computed(() => mmToPx(props.labelWidthMm, PREVIEW_PX_PER_MM))
+const canvasHeightPx = computed(() => mmToPx(props.labelHeightMm, PREVIEW_PX_PER_MM))
+
 const sizeLabel = computed(() => {
-  const mmW = dotsToMm(props.width, props.dpi).toFixed(1)
-  const mmH = dotsToMm(props.height, props.dpi).toFixed(1)
-  return `Матрица: ${props.width} × ${props.height} точек (≈ ${mmW} × ${mmH} мм)`
+  return `Этикетка: ${props.labelWidthMm.toFixed(2)} × ${props.labelHeightMm.toFixed(2)} мм`
 })
 
-const parsePx = (value: string): number => {
-  const parsed = Number.parseFloat(value)
-  return Number.isFinite(parsed) ? parsed : 0
+const mmToCanvasPx = (valueMm: number): number => {
+  return Math.round(valueMm * PREVIEW_PX_PER_MM)
 }
 
-const updateWorkspaceViewport = (): void => {
-  const workspace = workspaceRef.value
-  if (!workspace) {
-    return
-  }
-
-  const styles = window.getComputedStyle(workspace)
-  const horizontalPadding = parsePx(styles.paddingLeft) + parsePx(styles.paddingRight)
-  const verticalPadding = parsePx(styles.paddingTop) + parsePx(styles.paddingBottom)
-  const indicatorReserve = 40
-
-  workspaceViewport.value = {
-    width: Math.max(1, workspace.clientWidth - horizontalPadding),
-    height: Math.max(1, workspace.clientHeight - verticalPadding - indicatorReserve),
-  }
+const pxToMm = (valuePx: number): number => {
+  return roundMm(valuePx / PREVIEW_PX_PER_MM)
 }
-
-const canvasScale = computed(() => {
-  const fitByWidth = workspaceViewport.value.width / props.width
-  const fitByHeight = workspaceViewport.value.height / props.height
-  const fitScale = Math.min(fitByWidth, fitByHeight)
-
-  if (!Number.isFinite(fitScale) || fitScale <= 0) {
-    return FALLBACK_CANVAS_SCALE
-  }
-
-  return Math.max(MIN_CANVAS_SCALE, fitScale)
-})
 
 const labelStyle = computed(() => {
   return {
-    width: `${props.width}px`,
-    height: `${props.height}px`,
-    transform: `scale(${canvasScale.value})`,
+    width: `${canvasWidthPx.value}px`,
+    height: `${canvasHeightPx.value}px`,
   }
 })
 
 const getNodeStyle = (element: LabelElement): Record<string, string> => {
   const box = getElementBox(element)
   return {
-    left: `${box.left}px`,
-    top: `${box.top}px`,
-    width: `${box.width}px`,
-    height: `${box.height}px`,
+    left: `${mmToCanvasPx(box.left)}px`,
+    top: `${mmToCanvasPx(box.top)}px`,
+    width: `${Math.max(1, mmToCanvasPx(box.width))}px`,
+    height: `${Math.max(1, mmToCanvasPx(box.height))}px`,
   }
 }
 
@@ -134,10 +102,10 @@ const frameStyle = computed(() => {
   }
 
   return {
-    left: `${selectedBox.value.left}px`,
-    top: `${selectedBox.value.top}px`,
-    width: `${selectedBox.value.width}px`,
-    height: `${selectedBox.value.height}px`,
+    left: `${mmToCanvasPx(selectedBox.value.left)}px`,
+    top: `${mmToCanvasPx(selectedBox.value.top)}px`,
+    width: `${Math.max(1, mmToCanvasPx(selectedBox.value.width))}px`,
+    height: `${Math.max(1, mmToCanvasPx(selectedBox.value.height))}px`,
   }
 })
 
@@ -147,8 +115,8 @@ const resizeHandleStyle = computed(() => {
   }
 
   return {
-    left: `${selectedElement.value.x + selectedElement.value.width}px`,
-    top: `${selectedElement.value.y + selectedElement.value.height}px`,
+    left: `${mmToCanvasPx(selectedElement.value.x + selectedElement.value.width)}px`,
+    top: `${mmToCanvasPx(selectedElement.value.y + selectedElement.value.height)}px`,
   }
 })
 
@@ -158,8 +126,8 @@ const lineP1Style = computed(() => {
   }
 
   return {
-    left: `${selectedElement.value.x1}px`,
-    top: `${selectedElement.value.y1}px`,
+    left: `${mmToCanvasPx(selectedElement.value.x1)}px`,
+    top: `${mmToCanvasPx(selectedElement.value.y1)}px`,
   }
 })
 
@@ -169,39 +137,87 @@ const lineP2Style = computed(() => {
   }
 
   return {
-    left: `${selectedElement.value.x2}px`,
-    top: `${selectedElement.value.y2}px`,
+    left: `${mmToCanvasPx(selectedElement.value.x2)}px`,
+    top: `${mmToCanvasPx(selectedElement.value.y2)}px`,
   }
 })
 
-const refreshRenders = async (): Promise<void> => {
-  const ticket = ++renderTicket
+const refreshBarcodeSources = (): void => {
   const next: Record<string, string> = {}
 
-  for (let index = 0; index < props.elements.length; index += 1) {
-    const element = props.elements[index]
+  for (let i = 0; i < props.elements.length; i += 1) {
+    const element = props.elements[i]
+    if (element.type !== 'code') {
+      continue
+    }
+
     const value = props.getValue(element)
-    const canvas = await renderElement(element, value)
-
-    if (ticket !== renderTicket) {
-      return
-    }
-
-    if (canvas) {
-      next[element.id] = canvas.toDataURL()
-    }
+    next[element.id] = buildBarcodeSvgMarkup(element, value) ?? ''
   }
 
-  renderedSources.value = next
+  barcodeMarkup.value = next
 }
 
 watch(
-  () => [props.elements, props.width, props.height, props.csvData],
+  () => [props.elements, props.csvData],
   () => {
-    void refreshRenders()
+    refreshBarcodeSources()
   },
   { deep: true, immediate: true },
 )
+
+const getDisplayValue = (element: LabelElement): string => {
+  return props.getValue(element)
+}
+
+const getTextStyle = (element: TextElement): Record<string, string> => {
+  return {
+    color: '#000',
+    fontFamily: 'Arial, sans-serif',
+    fontSize: `${Math.max(1, mmToCanvasPx(element.fontSize))}px`,
+    fontWeight: element.bold ? '700' : '400',
+    height: '100%',
+    lineHeight: '1.15',
+    overflow: 'hidden',
+    textAlign: element.align,
+    whiteSpace: 'pre-wrap',
+    width: '100%',
+    wordBreak: 'break-word',
+  }
+}
+
+const getLineStyle = (element: LineElement): Record<string, string> => {
+  const box = getElementBox(element)
+  const dx = element.x2 - element.x1
+  const dy = element.y2 - element.y1
+  const lengthMm = Math.sqrt(dx * dx + dy * dy)
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI
+  const thicknessPx = Math.max(1, mmToCanvasPx(element.thickness))
+  const startX = mmToCanvasPx(element.x1 - box.left)
+  const startY = mmToCanvasPx(element.y1 - box.top)
+
+  return {
+    background: '#000',
+    height: `${thicknessPx}px`,
+    left: `${startX}px`,
+    position: 'absolute',
+    top: `${Math.round(startY - thicknessPx / 2)}px`,
+    transform: `rotate(${angle}deg)`,
+    transformOrigin: '0 50%',
+    width: `${Math.max(1, mmToCanvasPx(lengthMm))}px`,
+  }
+}
+
+const getCodeStyle = (_element: CodeElement): Record<string, string> => {
+  return {
+    alignItems: 'center',
+    display: 'flex',
+    height: '100%',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    width: '100%',
+  }
+}
 
 const startDrag = (state: DragState, event: MouseEvent): void => {
   event.preventDefault()
@@ -218,33 +234,14 @@ const stopDrag = (): void => {
   window.removeEventListener('mouseup', stopDrag)
 }
 
-onMounted(() => {
-  updateWorkspaceViewport()
-  if (workspaceRef.value) {
-    workspaceResizeObserver = new ResizeObserver(() => {
-      updateWorkspaceViewport()
-    })
-    workspaceResizeObserver.observe(workspaceRef.value)
-  }
-  window.addEventListener('resize', updateWorkspaceViewport)
-})
-
-onBeforeUnmount(() => {
-  stopDrag()
-  workspaceResizeObserver?.disconnect()
-  workspaceResizeObserver = null
-  window.removeEventListener('resize', updateWorkspaceViewport)
-})
-
 const onMouseMove = (event: MouseEvent): void => {
   const current = dragState.value
   if (!current) {
     return
   }
 
-  const scale = canvasScale.value || FALLBACK_CANVAS_SCALE
-  const dx = (event.clientX - current.startClientX) / scale
-  const dy = (event.clientY - current.startClientY) / scale
+  const dxMm = pxToMm(event.clientX - current.startClientX)
+  const dyMm = pxToMm(event.clientY - current.startClientY)
 
   if (current.mode === 'move-element') {
     const element = props.elements.find((item) => item.id === current.id)
@@ -253,23 +250,20 @@ const onMouseMove = (event: MouseEvent): void => {
     }
 
     if (element.type === 'line') {
-      const deltaX = Math.round(current.initial.x1 + dx) - current.initial.x1
-      const deltaY = Math.round(current.initial.y1 + dy) - current.initial.y1
-
       emit('patch-element', {
         id: element.id,
         patch: {
-          x1: current.initial.x1 + deltaX,
-          y1: current.initial.y1 + deltaY,
-          x2: current.initial.x2 + deltaX,
-          y2: current.initial.y2 + deltaY,
+          x1: roundMm(current.initial.x1 + dxMm),
+          y1: roundMm(current.initial.y1 + dyMm),
+          x2: roundMm(current.initial.x2 + dxMm),
+          y2: roundMm(current.initial.y2 + dyMm),
         } as Partial<LineElement>,
       })
       return
     }
 
-    const nextX = clamp(Math.round(current.initial.x + dx), 0, Math.max(0, props.width - element.width))
-    const nextY = clamp(Math.round(current.initial.y + dy), 0, Math.max(0, props.height - element.height))
+    const nextX = clamp(roundMm(current.initial.x + dxMm), 0, Math.max(0, props.labelWidthMm - element.width))
+    const nextY = clamp(roundMm(current.initial.y + dyMm), 0, Math.max(0, props.labelHeightMm - element.height))
 
     emit('patch-element', {
       id: element.id,
@@ -283,8 +277,8 @@ const onMouseMove = (event: MouseEvent): void => {
   }
 
   if (current.mode === 'resize') {
-    const nextWidth = Math.max(1, Math.round(current.initialWidth + dx))
-    const nextHeight = Math.max(1, Math.round(current.initialHeight + dy))
+    const nextWidth = Math.max(0.1, roundMm(current.initialWidth + dxMm))
+    const nextHeight = Math.max(0.1, roundMm(current.initialHeight + dyMm))
 
     emit('patch-element', {
       id: current.id,
@@ -297,14 +291,11 @@ const onMouseMove = (event: MouseEvent): void => {
     return
   }
 
-  const nextX = Math.round(current.initialX + dx)
-  const nextY = Math.round(current.initialY + dy)
-
   emit('patch-element', {
     id: current.id,
     patch: (current.point === 1
-      ? { x1: nextX, y1: nextY }
-      : { x2: nextX, y2: nextY }) as Partial<LineElement>,
+      ? { x1: roundMm(current.initialX + dxMm), y1: roundMm(current.initialY + dyMm) }
+      : { x2: roundMm(current.initialX + dxMm), y2: roundMm(current.initialY + dyMm) }) as Partial<LineElement>,
   })
 }
 
@@ -387,7 +378,7 @@ const onLinePointMouseDown = (event: MouseEvent, point: 1 | 2): void => {
 </script>
 
 <template lang="pug">
-section.workspace#editor-workspace(ref='workspaceRef')
+section.workspace#editor-workspace
   #label-canvas(:style='labelStyle')
     .grid-background
 
@@ -399,7 +390,17 @@ section.workspace#editor-workspace(ref='workspaceRef')
         :style='getNodeStyle(element)'
         @mousedown='onElementMouseDown($event, element)'
       )
-        img.element-render(:src='renderedSources[element.id]' alt='' draggable='false')
+        template(v-if='element.type === "text"')
+          .text-render(:style='getTextStyle(element)') {{ getDisplayValue(element) }}
+
+        template(v-else-if='element.type === "image"')
+          img.element-image(:src='getDisplayValue(element)' alt='' draggable='false')
+
+        template(v-else-if='element.type === "line"')
+          .line-render(:style='getLineStyle(element)')
+
+        template(v-else)
+          .element-code(:style='getCodeStyle(element)' v-html='barcodeMarkup[element.id]')
 
     .control-layer
       .selection-frame(v-if='selectedElement' :style='frameStyle')
@@ -443,18 +444,15 @@ section.workspace#editor-workspace(ref='workspaceRef')
   border: 1px solid #94a3b8;
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 10%);
   box-sizing: content-box;
-  image-rendering: pixelated;
   overflow: visible;
   position: relative;
-  transform-origin: center center;
-  transition: width 0.2s, height 0.2s, transform 0.2s;
 }
 
 .grid-background {
   background-image:
     linear-gradient(to right, #e2e8f0 1px, transparent 1px),
     linear-gradient(to bottom, #e2e8f0 1px, transparent 1px);
-  background-size: 1px 1px;
+  background-size: 14px 14px;
   inset: 0;
   opacity: 0.55;
   pointer-events: none;
@@ -476,7 +474,6 @@ section.workspace#editor-workspace(ref='workspaceRef')
 
 .canvas-element {
   cursor: move;
-  image-rendering: pixelated;
   position: absolute;
   user-select: none;
 }
@@ -485,11 +482,26 @@ section.workspace#editor-workspace(ref='workspaceRef')
   z-index: 10;
 }
 
-.element-render {
+.text-render {
+  display: block;
+}
+
+.element-image,
+.element-code {
   display: block;
   height: 100%;
-  pointer-events: none;
   width: 100%;
+}
+
+.element-code :deep(svg) {
+  display: block;
+  height: 100%;
+  shape-rendering: crispEdges;
+  width: 100%;
+}
+
+.line-render {
+  pointer-events: none;
 }
 
 .selection-frame {
@@ -503,11 +515,11 @@ section.workspace#editor-workspace(ref='workspaceRef')
 .ctrl-handle {
   background: #fff;
   border: 0.5px solid #0055ff;
-  height: 4px;
+  height: 6px;
   pointer-events: auto;
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 4px;
+  width: 6px;
   z-index: 20;
 }
 

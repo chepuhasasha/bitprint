@@ -1,85 +1,49 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 
-import { DEFAULT_DPI, dotsToMm, mmToDots } from '../../domain/constants'
 import type { ElementType } from '../../domain/types'
 
 const props = defineProps<{
-  dpi: number
-  width: number
-  height: number
+  labelWidthMm: number
+  labelHeightMm: number
   printInProgress: boolean
   printLabel: string
 }>()
 
 const emit = defineEmits<{
-  (event: 'update-dpi', payload: number): void
-  (event: 'update-size', payload: { width: number; height: number }): void
+  (event: 'update-label-size', payload: { widthMm: number; heightMm: number }): void
   (event: 'add-element', payload: ElementType): void
   (event: 'save-project'): void
   (event: 'load-project', payload: File): void
   (event: 'print'): void
 }>()
 
-const widthDotsInput = ref(props.width)
-const heightDotsInput = ref(props.height)
-const widthMmInput = ref(Number(dotsToMm(props.width, props.dpi).toFixed(2)))
-const heightMmInput = ref(Number(dotsToMm(props.height, props.dpi).toFixed(2)))
-const dpiInput = ref(props.dpi)
+const widthMmInput = ref(props.labelWidthMm)
+const heightMmInput = ref(props.labelHeightMm)
 const projectInputRef = ref<HTMLInputElement | null>(null)
-
-const normalizePositiveInt = (value: unknown, fallback: number): number => {
-  const parsed = Math.round(Number(value))
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
 
 const normalizePositiveFloat = (value: unknown, fallback: number): number => {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
 }
 
-const toRoundedMm = (dots: number, dpi: number): number => {
-  return Number(dotsToMm(dots, dpi).toFixed(2))
-}
-
 watch(
-  () => [props.width, props.height, props.dpi],
-  ([nextWidth, nextHeight, nextDpi]) => {
-    widthDotsInput.value = nextWidth
-    heightDotsInput.value = nextHeight
-    dpiInput.value = nextDpi
-    widthMmInput.value = toRoundedMm(nextWidth, nextDpi)
-    heightMmInput.value = toRoundedMm(nextHeight, nextDpi)
+  () => [props.labelWidthMm, props.labelHeightMm],
+  ([nextWidth, nextHeight]) => {
+    widthMmInput.value = nextWidth
+    heightMmInput.value = nextHeight
   },
   { immediate: true },
 )
 
-const applyDotsSize = (): void => {
-  const nextWidth = Math.max(1, normalizePositiveInt(widthDotsInput.value, props.width))
-  const nextHeight = Math.max(1, normalizePositiveInt(heightDotsInput.value, props.height))
+const applyLabelSize = (): void => {
+  const nextWidthMm = normalizePositiveFloat(widthMmInput.value, props.labelWidthMm)
+  const nextHeightMm = normalizePositiveFloat(heightMmInput.value, props.labelHeightMm)
 
-  emit('update-size', {
-    width: nextWidth,
-    height: nextHeight,
+  emit('update-label-size', {
+    widthMm: nextWidthMm,
+    heightMm: nextHeightMm,
   })
-}
-
-const applyMmSize = (): void => {
-  const dpi = normalizePositiveInt(props.dpi, DEFAULT_DPI)
-  const fallbackWidthMm = toRoundedMm(props.width, dpi)
-  const fallbackHeightMm = toRoundedMm(props.height, dpi)
-  const nextWidthMm = normalizePositiveFloat(widthMmInput.value, fallbackWidthMm)
-  const nextHeightMm = normalizePositiveFloat(heightMmInput.value, fallbackHeightMm)
-
-  emit('update-size', {
-    width: Math.max(1, mmToDots(nextWidthMm, dpi)),
-    height: Math.max(1, mmToDots(nextHeightMm, dpi)),
-  })
-}
-
-const applyDpi = (): void => {
-  const nextDpi = normalizePositiveInt(dpiInput.value, props.dpi)
-  emit('update-dpi', nextDpi)
 }
 
 const triggerProjectInput = (): void => {
@@ -110,32 +74,17 @@ header.app-header
         rect(x='3' y='3' width='18' height='18' rx='2' ry='2')
         circle(cx='8.5' cy='8.5' r='1.5')
         polyline(points='21 15 16 10 5 21')
-    h1.brand__title PixelPerfect Label Engine
+    h1.brand__title BitPrint A4
 
   .toolbar
     .toolbar-group.toolbar-size-card
-      span.group-label DPI
-      label.inline-field
-        span D
-        input(v-model.number='dpiInput' type='number' min='1' max='2400' @change='applyDpi')
-
-    .toolbar-group.toolbar-size-card
-      span.group-label Размер (точки)
+      span.group-label Этикетка (мм)
       label.inline-field
         span Ш
-        input(v-model.number='widthDotsInput' type='number' min='1' max='10000' @change='applyDotsSize')
+        input(v-model.number='widthMmInput' type='number' min='0.1' max='1000' step='0.01' @change='applyLabelSize')
       label.inline-field
         span В
-        input(v-model.number='heightDotsInput' type='number' min='1' max='10000' @change='applyDotsSize')
-
-    .toolbar-group.toolbar-size-card
-      span.group-label Размер (мм)
-      label.inline-field
-        span Ш
-        input(v-model.number='widthMmInput' type='number' min='0.1' max='1000' step='0.1' @change='applyMmSize')
-      label.inline-field
-        span В
-        input(v-model.number='heightMmInput' type='number' min='0.1' max='1000' step='0.1' @change='applyMmSize')
+        input(v-model.number='heightMmInput' type='number' min='0.1' max='1000' step='0.01' @change='applyLabelSize')
 
     .toolbar-group
       button.btn.btn--accent(@click='add("text")') + Текст

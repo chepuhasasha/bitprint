@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { CODE_TYPE_OPTIONS, TEXT_ALIGN_OPTIONS } from '../../domain/constants'
 import type { LabelElement } from '../../domain/types'
 
@@ -23,7 +23,7 @@ const boldOptions = [
 ] as const
 
 const scaleOptions = [
-  { value: 'integer', label: 'Точное (пиксель-в-пиксель)' },
+  { value: 'integer', label: 'Точное' },
   { value: 'stretch', label: 'Растянуть' },
 ] as const
 
@@ -59,30 +59,30 @@ const onStringUpdate = (key: string, event: Event): void => {
 <template lang="pug">
 aside.properties
   .properties-header
-    h2 Свойства (в точках)
+    h2 Свойства (мм)
 
   .properties-body(v-if='selectedElement')
     .block(v-if='selectedElement.type === "line"')
-      h3 Координаты линии (Точки)
+      h3 Координаты линии (мм)
       .grid-two
         label.field
           span X1
-          input(type='number' :value='selectedElement.x1' @change='onNumberUpdate("x1", $event)')
+          input(type='number' step='0.01' :value='selectedElement.x1' @change='onNumberUpdate("x1", $event)')
         label.field
           span Y1
-          input(type='number' :value='selectedElement.y1' @change='onNumberUpdate("y1", $event)')
+          input(type='number' step='0.01' :value='selectedElement.y1' @change='onNumberUpdate("y1", $event)')
         label.field
           span X2
-          input(type='number' :value='selectedElement.x2' @change='onNumberUpdate("x2", $event)')
+          input(type='number' step='0.01' :value='selectedElement.x2' @change='onNumberUpdate("x2", $event)')
         label.field
           span Y2
-          input(type='number' :value='selectedElement.y2' @change='onNumberUpdate("y2", $event)')
+          input(type='number' step='0.01' :value='selectedElement.y2' @change='onNumberUpdate("y2", $event)')
       label.field
-        span Толщина
-        input(type='number' :value='selectedElement.thickness' @change='onNumberUpdate("thickness", $event)')
+        span Толщина (мм)
+        input(type='number' step='0.01' min='0.01' :value='selectedElement.thickness' @change='onNumberUpdate("thickness", $event)')
 
     .block(v-else-if='selectedElement.type === "image"')
-      h3 Изображение (1-bit)
+      h3 Изображение
       input(type='file' accept='image/*' @change='onImageChange')
 
     .block(v-else)
@@ -107,27 +107,27 @@ aside.properties
           option(v-if='csvHeaders.length === 0' value='0') Колонка 1
 
     .block(v-if='selectedElement.type !== "line"')
-      h3 Геометрия (Точки)
+      h3 Геометрия (мм)
       .grid-two
         label.field
           span X
-          input(type='number' :value='selectedElement.x' @change='onNumberUpdate("x", $event)')
+          input(type='number' step='0.01' :value='selectedElement.x' @change='onNumberUpdate("x", $event)')
         label.field
           span Y
-          input(type='number' :value='selectedElement.y' @change='onNumberUpdate("y", $event)')
+          input(type='number' step='0.01' :value='selectedElement.y' @change='onNumberUpdate("y", $event)')
         label.field
           span Ширина
-          input(type='number' :value='selectedElement.width' @change='onNumberUpdate("width", $event)')
+          input(type='number' step='0.01' min='0.1' :value='selectedElement.width' @change='onNumberUpdate("width", $event)')
         label.field
           span Высота
-          input(type='number' :value='selectedElement.height' @change='onNumberUpdate("height", $event)')
+          input(type='number' step='0.01' min='0.1' :value='selectedElement.height' @change='onNumberUpdate("height", $event)')
 
     .block(v-if='selectedElement.type === "text"')
       h3 Стиль текста
       .inline
         label.field
-          span Размер
-          input(type='number' min='1' :value='selectedElement.fontSize' @change='onNumberUpdate("fontSize", $event)')
+          span Размер (мм)
+          input(type='number' min='0.1' step='0.01' :value='selectedElement.fontSize' @change='onNumberUpdate("fontSize", $event)')
         label.field
           span Жирный
           select(:value='String(selectedElement.bold)' @change='onStringUpdate("bold", $event)')

@@ -1,11 +1,16 @@
-﻿import Papa from 'papaparse'
+import Papa from 'papaparse'
 import { computed, reactive, ref } from 'vue'
 
-import { DEFAULT_DPI, DEFAULT_LABEL_SIZE, dotsToMm } from '../domain/constants'
+import {
+  DEFAULT_LABEL_MM,
+  DEFAULT_PRINT_SHEET_SETTINGS,
+  roundMm,
+} from '../domain/constants'
+import { buildBarcodeSvgMarkup } from '../domain/barcode'
 import { createDefaultElements, createElementByType, normalizeLoadedElement } from '../domain/factories'
-import { renderElement } from '../domain/rasterizer'
-import type { EditorState, ElementType, LabelElement, LineElement } from '../domain/types'
-import { getElementBox, getElementValue, parseNumber } from '../domain/utils'
+import { calculatePrintGrid, getGridLabelPosition, normalizePrintSheet } from '../domain/print'
+import type { EditorState, ElementType, LabelElement, LineElement, PrintSheetSettings } from '../domain/types'
+import { getElementValue, parseNumber } from '../domain/utils'
 
 const NUMERIC_PROPS = new Set([
   'x',
@@ -20,14 +25,16 @@ const NUMERIC_PROPS = new Set([
   'thickness',
 ])
 
+const PROJECT_VERSION = 2
+
 const syncLineDimensions = (element: LineElement): void => {
-  element.width = Math.max(1, Math.abs(element.x2 - element.x1))
-  element.height = Math.max(1, Math.abs(element.y2 - element.y1))
+  element.width = roundMm(Math.max(0.01, Math.abs(element.x2 - element.x1)))
+  element.height = roundMm(Math.max(0.01, Math.abs(element.y2 - element.y1)))
 }
 
 const coercePropValue = (key: string, value: unknown): unknown => {
   if (NUMERIC_PROPS.has(key)) {
-    return parseNumber(value, 1)
+    return parseNumber(value, 0)
   }
 
   if (key === 'bold') {
@@ -41,11 +48,153 @@ const coercePropValue = (key: string, value: unknown): unknown => {
   return value
 }
 
+const parsePositiveFloat = (value: unknown, fallback: number): number => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
+}
+
+const parseNonNegativeFloat = (value: unknown, fallback: number): number => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
+}
+
+const mergePrintSheet = (
+  current: PrintSheetSettings,
+  patch: Partial<PrintSheetSettings>,
+): PrintSheetSettings => {
+  return normalizePrintSheet({
+    pageWidthMm: parsePositiveFloat(patch.pageWidthMm, current.pageWidthMm),
+    pageHeightMm: parsePositiveFloat(patch.pageHeightMm, current.pageHeightMm),
+    marginLeftMm: parseNonNegativeFloat(patch.marginLeftMm, current.marginLeftMm),
+    marginRightMm: parseNonNegativeFloat(patch.marginRightMm, current.marginRightMm),
+    marginTopMm: parseNonNegativeFloat(patch.marginTopMm, current.marginTopMm),
+    marginBottomMm: parseNonNegativeFloat(patch.marginBottomMm, current.marginBottomMm),
+    gapHorizontalMm: parseNonNegativeFloat(patch.gapHorizontalMm, current.gapHorizontalMm),
+    gapVerticalMm: parseNonNegativeFloat(patch.gapVerticalMm, current.gapVerticalMm),
+  })
+}
+
+const setAbsoluteMmBox = (
+  element: HTMLElement,
+  leftMm: number,
+  topMm: number,
+  widthMm: number,
+  heightMm: number,
+): void => {
+  element.style.position = 'absolute'
+  element.style.left = `${leftMm}mm`
+  element.style.top = `${topMm}mm`
+  element.style.width = `${widthMm}mm`
+  element.style.height = `${heightMm}mm`
+  element.style.boxSizing = 'border-box'
+}
+
+const createTextNode = (element: Extract<LabelElement, { type: 'text' }>, value: string): HTMLElement => {
+  const node = document.createElement('div')
+  setAbsoluteMmBox(node, element.x, element.y, element.width, element.height)
+  node.style.whiteSpace = 'pre-wrap'
+  node.style.wordBreak = 'break-word'
+  node.style.overflow = 'hidden'
+  node.style.fontFamily = 'Arial, sans-serif'
+  node.style.fontSize = `${Math.max(0.1, element.fontSize)}mm`
+  node.style.fontWeight = element.bold ? '700' : '400'
+  node.style.lineHeight = '1.15'
+  node.style.color = '#000'
+  node.style.textAlign = element.align
+  node.textContent = value
+  return node
+}
+
+const createImageNode = (element: Extract<LabelElement, { type: 'image' }>, value: string): HTMLElement => {
+  const node = document.createElement('img')
+  setAbsoluteMmBox(node, element.x, element.y, element.width, element.height)
+  node.style.objectFit = 'fill'
+  node.style.display = 'block'
+  node.draggable = false
+  node.src = value
+  return node
+}
+
+const createLineNode = (element: Extract<LabelElement, { type: 'line' }>): HTMLElement => {
+  const node = document.createElement('div')
+  const dx = element.x2 - element.x1
+  const dy = element.y2 - element.y1
+  const length = Math.sqrt(dx * dx + dy * dy)
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI
+
+  node.style.position = 'absolute'
+  node.style.left = `${element.x1}mm`
+  node.style.top = `${element.y1 - element.thickness / 2}mm`
+  node.style.width = `${Math.max(0.01, length)}mm`
+  node.style.height = `${Math.max(0.01, element.thickness)}mm`
+  node.style.background = '#000'
+  node.style.transformOrigin = '0 50%'
+  node.style.transform = `rotate(${angle}deg)`
+
+  return node
+}
+
+const createBarcodeNode = (element: Extract<LabelElement, { type: 'code' }>, value: string): HTMLElement => {
+  const wrapper = document.createElement('div')
+  setAbsoluteMmBox(wrapper, element.x, element.y, element.width, element.height)
+  wrapper.style.display = 'flex'
+  wrapper.style.alignItems = 'center'
+  wrapper.style.justifyContent = 'center'
+  wrapper.style.overflow = 'hidden'
+
+  const svgMarkup = buildBarcodeSvgMarkup(element, value)
+  if (svgMarkup) {
+    const parser = new DOMParser()
+    const parsed = parser.parseFromString(svgMarkup, 'image/svg+xml')
+    const svg = parsed.documentElement as unknown as SVGSVGElement
+
+    svg.style.display = 'block'
+
+    wrapper.appendChild(svg)
+  }
+
+  return wrapper
+}
+
+const createLabelDom = (elements: LabelElement[], getValue: (element: LabelElement) => string): HTMLElement => {
+  const root = document.createElement('div')
+  root.className = 'print-label-root'
+  root.style.position = 'relative'
+  root.style.width = '100%'
+  root.style.height = '100%'
+  root.style.overflow = 'hidden'
+  root.style.background = '#fff'
+
+  for (let i = 0; i < elements.length; i += 1) {
+    const element = elements[i]
+    const value = getValue(element)
+
+    if (element.type === 'text') {
+      root.appendChild(createTextNode(element, value))
+      continue
+    }
+
+    if (element.type === 'image') {
+      root.appendChild(createImageNode(element, value))
+      continue
+    }
+
+    if (element.type === 'line') {
+      root.appendChild(createLineNode(element))
+      continue
+    }
+
+    root.appendChild(createBarcodeNode(element, value))
+  }
+
+  return root
+}
+
 export const useLabelEditor = () => {
   const state = reactive<EditorState>({
-    dpi: DEFAULT_DPI,
-    width: DEFAULT_LABEL_SIZE.width,
-    height: DEFAULT_LABEL_SIZE.height,
+    labelWidthMm: DEFAULT_LABEL_MM.width,
+    labelHeightMm: DEFAULT_LABEL_MM.height,
+    printSheet: { ...DEFAULT_PRINT_SHEET_SETTINGS },
     elements: [],
     selectedId: null,
     csv: {
@@ -55,17 +204,14 @@ export const useLabelEditor = () => {
   })
 
   const printInProgress = ref(false)
-  const printProgressText = ref('Матричная Печать')
+  const printProgressText = ref('Печать A4')
 
   const selectedElement = computed<LabelElement | null>(() => {
     return state.elements.find((element) => element.id === state.selectedId) ?? null
   })
 
-  const mmSize = computed(() => {
-    return {
-      width: dotsToMm(state.width, state.dpi).toFixed(1),
-      height: dotsToMm(state.height, state.dpi).toFixed(1),
-    }
+  const printGrid = computed(() => {
+    return calculatePrintGrid(state.labelWidthMm, state.labelHeightMm, state.printSheet)
   })
 
   const initDefaults = (): void => {
@@ -73,13 +219,13 @@ export const useLabelEditor = () => {
     state.selectedId = state.elements[0]?.id ?? null
   }
 
-  const setCanvasSize = (width: unknown, height: unknown): void => {
-    state.width = Math.max(1, parseNumber(width, DEFAULT_LABEL_SIZE.width))
-    state.height = Math.max(1, parseNumber(height, DEFAULT_LABEL_SIZE.height))
+  const setLabelSizeMm = (widthMm: unknown, heightMm: unknown): void => {
+    state.labelWidthMm = roundMm(parsePositiveFloat(widthMm, state.labelWidthMm))
+    state.labelHeightMm = roundMm(parsePositiveFloat(heightMm, state.labelHeightMm))
   }
 
-  const setDpi = (dpi: unknown): void => {
-    state.dpi = Math.max(1, parseNumber(dpi, DEFAULT_DPI))
+  const updatePrintSheet = (patch: Partial<PrintSheetSettings>): void => {
+    state.printSheet = mergePrintSheet(state.printSheet, patch)
   }
 
   const addElement = (type: ElementType): void => {
@@ -163,15 +309,16 @@ export const useLabelEditor = () => {
 
   const saveProject = (): void => {
     const payload = {
-      dpi: state.dpi,
-      width: state.width,
-      height: state.height,
+      version: PROJECT_VERSION,
+      labelWidthMm: state.labelWidthMm,
+      labelHeightMm: state.labelHeightMm,
+      printSheet: state.printSheet,
       elements: state.elements,
     }
 
     const link = document.createElement('a')
     link.href = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(payload, null, 2))}`
-    link.download = `pixel_label_${Date.now()}.json`
+    link.download = `bitprint_project_${Date.now()}.json`
     link.click()
   }
 
@@ -179,14 +326,23 @@ export const useLabelEditor = () => {
     try {
       const text = await file.text()
       const data = JSON.parse(text) as {
-        dpi?: number
-        width?: number
-        height?: number
+        version?: number
+        labelWidthMm?: number
+        labelHeightMm?: number
+        printSheet?: Partial<PrintSheetSettings>
         elements?: Record<string, unknown>[]
       }
 
-      setDpi(data.dpi ?? DEFAULT_DPI)
-      setCanvasSize(data.width ?? DEFAULT_LABEL_SIZE.width, data.height ?? DEFAULT_LABEL_SIZE.height)
+      if (data.version !== PROJECT_VERSION) {
+        throw new Error('unsupported_project_version')
+      }
+
+      const nextLabelWidthMm = parsePositiveFloat(data.labelWidthMm, DEFAULT_LABEL_MM.width)
+      const nextLabelHeightMm = parsePositiveFloat(data.labelHeightMm, DEFAULT_LABEL_MM.height)
+
+      state.labelWidthMm = roundMm(nextLabelWidthMm)
+      state.labelHeightMm = roundMm(nextLabelHeightMm)
+      state.printSheet = mergePrintSheet(DEFAULT_PRINT_SHEET_SETTINGS, data.printSheet ?? {})
 
       if (Array.isArray(data.elements)) {
         const normalized = data.elements
@@ -197,7 +353,7 @@ export const useLabelEditor = () => {
         state.selectedId = state.elements[0]?.id ?? null
       }
     } catch {
-      alert('Ошибка файла проекта.')
+      alert('Неподдерживаемый формат проекта. Сохраняйте и загружайте только новые проекты v2.')
     }
   }
 
@@ -209,67 +365,94 @@ export const useLabelEditor = () => {
     printInProgress.value = true
     printProgressText.value = 'Генерация...'
 
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 50))
 
-    container.innerHTML = ''
-    const rowCount = Math.max(1, state.csv.data.length - 1)
+      container.innerHTML = ''
 
-    for (let index = 0; index < rowCount; index += 1) {
-      const csvRow = state.csv.data.length > 1 ? state.csv.data[index + 1] : null
-
-      const output = document.createElement('canvas')
-      output.width = state.width
-      output.height = state.height
-      const ctx = output.getContext('2d')
-      if (!ctx) {
-        continue
+      const grid = calculatePrintGrid(state.labelWidthMm, state.labelHeightMm, state.printSheet)
+      if (grid.labelsPerPage <= 0) {
+        alert('Проверьте поля листа и отступы: в текущей конфигурации этикетки не помещаются на A4.')
+        return
       }
 
-      ctx.fillStyle = 'white'
-      ctx.fillRect(0, 0, output.width, output.height)
+      const rows = state.csv.data.length > 1 ? state.csv.data.slice(1) : [null]
+      const totalLabels = Math.max(1, rows.length)
+      const totalPages = Math.ceil(totalLabels / grid.labelsPerPage)
 
-      for (let elementIndex = 0; elementIndex < state.elements.length; elementIndex += 1) {
-        const element = state.elements[elementIndex]
-        const value = getValue(element, csvRow)
+      let renderedLabels = 0
 
-        try {
-          const rendered = await renderElement(element, value)
-          if (!rendered) {
-            continue
+      for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
+        const page = document.createElement('div')
+        page.className = 'print-sheet'
+        page.style.width = `${state.printSheet.pageWidthMm}mm`
+        page.style.height = `${state.printSheet.pageHeightMm}mm`
+        page.style.display = 'block'
+        page.style.position = 'relative'
+        page.style.overflow = 'hidden'
+        page.style.background = '#fff'
+        page.style.boxSizing = 'border-box'
+        page.style.breakInside = 'avoid'
+        page.style.pageBreakInside = 'avoid'
+        page.style.breakAfter = pageIndex < totalPages - 1 ? 'page' : 'auto'
+        page.style.pageBreakAfter = pageIndex < totalPages - 1 ? 'always' : 'auto'
+
+        const pageStart = pageIndex * grid.labelsPerPage
+        const pageEnd = Math.min(pageStart + grid.labelsPerPage, totalLabels)
+
+        for (let labelIndex = pageStart; labelIndex < pageEnd; labelIndex += 1) {
+          const row = rows[labelIndex] ?? null
+
+          const cellIndex = labelIndex - pageStart
+          const position = getGridLabelPosition(
+            cellIndex,
+            grid.columns,
+            state.labelWidthMm,
+            state.labelHeightMm,
+            state.printSheet,
+          )
+
+          const labelBox = document.createElement('div')
+          labelBox.className = 'print-label-box'
+          labelBox.style.left = `${position.leftMm}mm`
+          labelBox.style.top = `${position.topMm}mm`
+          labelBox.style.width = `${state.labelWidthMm}mm`
+          labelBox.style.height = `${state.labelHeightMm}mm`
+          labelBox.style.position = 'absolute'
+          labelBox.style.overflow = 'hidden'
+          labelBox.style.background = '#fff'
+          labelBox.style.boxSizing = 'border-box'
+
+          const labelContent = createLabelDom(state.elements, (element) => getValue(element, row))
+          labelBox.appendChild(labelContent)
+          page.appendChild(labelBox)
+
+          renderedLabels += 1
+          if (renderedLabels % 25 === 0 || renderedLabels === totalLabels) {
+            printProgressText.value = `Генерация: ${renderedLabels} / ${totalLabels} (лист ${pageIndex + 1}/${totalPages})`
+            await new Promise((resolve) => setTimeout(resolve, 10))
           }
-
-          const box = getElementBox(element)
-          ctx.drawImage(rendered, box.left, box.top)
-        } catch {
-          // Continue rendering remaining elements.
         }
+
+        container.appendChild(page)
       }
 
-      const page = document.createElement('div')
-      page.className = 'print-label-box'
-      page.appendChild(output)
-      container.appendChild(page)
-
-      if (index > 0 && index % 50 === 0) {
-        printProgressText.value = `Генерация: ${index} / ${rowCount}`
-        await new Promise((resolve) => setTimeout(resolve, 10))
-      }
+      window.print()
+    } finally {
+      printProgressText.value = 'Печать A4'
+      printInProgress.value = false
     }
-
-    printProgressText.value = 'Матричная Печать'
-    printInProgress.value = false
-    window.print()
   }
 
   return {
     state,
     selectedElement,
-    mmSize,
+    printGrid,
     printInProgress,
     printProgressText,
     initDefaults,
-    setCanvasSize,
-    setDpi,
+    setLabelSizeMm,
+    updatePrintSheet,
     addElement,
     deleteElement,
     selectElement,

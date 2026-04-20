@@ -1,8 +1,9 @@
-﻿import type { LabelElement } from './types'
+import { roundMm } from './constants'
+import type { LabelElement } from './types'
 
 export const parseNumber = (value: unknown, fallback = 0): number => {
-  const parsed = Math.round(Number(value))
-  return Number.isFinite(parsed) ? parsed : fallback
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? roundMm(parsed) : fallback
 }
 
 const hasStaticValue = (element: LabelElement): element is Exclude<LabelElement, { type: 'line' }> => {
@@ -32,14 +33,17 @@ export const getElementValue = (
 }
 
 export const normalizeGS1 = (text: string): string => {
-  if (!text || !text.includes('(01)')) {
+  if (!text) {
     return text
   }
 
   const normalized = text.replace(/_x001D_|<GS>|\\x1d|\\x1D/g, '\x1D')
+  if (normalized.includes('(01)')) {
+    return normalized
+  }
 
   if (!/^01\d{14}21/.test(normalized)) {
-    return text
+    return normalized
   }
 
   let formatted = `(01)${normalized.substring(2, 16)}(21)`
@@ -87,7 +91,7 @@ export const getElementBox = (element: LabelElement): ElementBox => {
     }
   }
 
-  const pad = element.thickness || 2
+  const pad = element.thickness || 0.3
   return {
     left: Math.min(element.x1, element.x2) - pad,
     top: Math.min(element.y1, element.y2) - pad,

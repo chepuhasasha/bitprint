@@ -1,5 +1,6 @@
-﻿import bwipjs from 'bwip-js'
+import bwipjs from 'bwip-js'
 
+import { mmToPx } from './constants'
 import type { CodeElement, LabelElement, LineElement, TextElement } from './types'
 import { normalizeGS1 } from './utils'
 
@@ -32,7 +33,43 @@ export const applyThreshold = (canvas: HTMLCanvasElement): void => {
   ctx.putImageData(imageData, 0, 0)
 }
 
-export const renderSystemText = (element: TextElement, text: string): HTMLCanvasElement => {
+const toPx = (mm: number, pxPerMm: number): number => {
+  return mmToPx(mm, pxPerMm)
+}
+
+const scaleTextElement = (element: TextElement, pxPerMm: number) => {
+  return {
+    width: toPx(element.width, pxPerMm),
+    height: toPx(element.height, pxPerMm),
+    fontSize: Math.max(1, toPx(element.fontSize, pxPerMm)),
+    align: element.align,
+    bold: element.bold,
+  }
+}
+
+const scaleCodeElement = (element: CodeElement, pxPerMm: number) => {
+  return {
+    width: toPx(element.width, pxPerMm),
+    height: toPx(element.height, pxPerMm),
+    codeType: element.codeType,
+    scaleMode: element.scaleMode,
+  }
+}
+
+const scaleLineElement = (element: LineElement, pxPerMm: number) => {
+  return {
+    x1: toPx(element.x1, pxPerMm),
+    y1: toPx(element.y1, pxPerMm),
+    x2: toPx(element.x2, pxPerMm),
+    y2: toPx(element.y2, pxPerMm),
+    thickness: Math.max(1, toPx(element.thickness, pxPerMm)),
+  }
+}
+
+export const renderSystemText = (
+  element: { width: number; height: number; fontSize: number; align: 'left' | 'center' | 'right'; bold: boolean },
+  text: string,
+): HTMLCanvasElement => {
   const canvas = document.createElement('canvas')
   canvas.width = element.width
   canvas.height = element.height
@@ -91,7 +128,10 @@ export const renderSystemText = (element: TextElement, text: string): HTMLCanvas
   return canvas
 }
 
-export const renderBarcode = (element: CodeElement, value: string): HTMLCanvasElement => {
+export const renderBarcode = (
+  element: { width: number; height: number; codeType: string; scaleMode: 'integer' | 'stretch' },
+  value: string,
+): HTMLCanvasElement => {
   const canvas = document.createElement('canvas')
   canvas.width = element.width
   canvas.height = element.height
@@ -158,7 +198,7 @@ export const renderBarcode = (element: CodeElement, value: string): HTMLCanvasEl
 }
 
 export const renderLine = (
-  element: LineElement,
+  element: { x1: number; y1: number; x2: number; y2: number; thickness: number },
   boxWidth: number,
   boxHeight: number,
   boxX: number,
@@ -174,7 +214,7 @@ export const renderLine = (
   }
 
   ctx.strokeStyle = 'black'
-  ctx.lineWidth = element.thickness || 2
+  ctx.lineWidth = element.thickness || 1
   ctx.lineCap = 'square'
   ctx.beginPath()
   ctx.moveTo(element.x1 - boxX, element.y1 - boxY)
@@ -198,10 +238,10 @@ export const renderImage = (element: { width: number; height: number }, src: str
 
     const image = new Image()
     image.onload = () => {
-      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      const ctx = canvas.getContext('2d')
       if (ctx) {
+        ctx.imageSmoothingEnabled = true
         ctx.drawImage(image, 0, 0, element.width, element.height)
-        applyThreshold(canvas)
       }
       resolve(canvas)
     }
@@ -217,26 +257,34 @@ export const renderImage = (element: { width: number; height: number }, src: str
 export const renderElement = async (
   element: LabelElement,
   value: string,
+  pxPerMm: number,
 ): Promise<HTMLCanvasElement | null> => {
   if (element.type === 'line') {
-    const pad = element.thickness || 2
-    const boxX = Math.min(element.x1, element.x2) - pad
-    const boxY = Math.min(element.y1, element.y2) - pad
-    const boxW = Math.abs(element.x2 - element.x1) + pad * 2
-    const boxH = Math.abs(element.y2 - element.y1) + pad * 2
-    return renderLine(element, boxW, boxH, boxX, boxY)
+    const scaled = scaleLineElement(element, pxPerMm)
+    const pad = scaled.thickness || 1
+    const boxX = Math.min(scaled.x1, scaled.x2) - pad
+    const boxY = Math.min(scaled.y1, scaled.y2) - pad
+    const boxW = Math.abs(scaled.x2 - scaled.x1) + pad * 2
+    const boxH = Math.abs(scaled.y2 - scaled.y1) + pad * 2
+    return renderLine(scaled, boxW, boxH, boxX, boxY)
   }
 
   if (element.type === 'text') {
-    return renderSystemText(element, value)
+    return renderSystemText(scaleTextElement(element, pxPerMm), value)
   }
 
   if (element.type === 'code') {
-    return renderBarcode(element, value)
+    return renderBarcode(scaleCodeElement(element, pxPerMm), value)
   }
 
   if (element.type === 'image') {
-    return renderImage(element, value)
+    return renderImage(
+      {
+        width: toPx(element.width, pxPerMm),
+        height: toPx(element.height, pxPerMm),
+      },
+      value,
+    )
   }
 
   return null
