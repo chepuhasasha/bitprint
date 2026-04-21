@@ -557,6 +557,18 @@ export const useLabelEditor = () => {
     return Math.max(1, Math.floor(state.manualLabelCount))
   }
 
+  const getCsvPdfMismatchWarning = (csvRowsCount: number, pdfPagesCount: number): string | null => {
+    if (csvRowsCount === pdfPagesCount) {
+      return null
+    }
+
+    if (csvRowsCount > pdfPagesCount) {
+      return `В CSV ${csvRowsCount} строк, а в PDF ${pdfPagesCount} стр.\nСтраницы PDF будут повторяться по кругу.\nПродолжить печать?`
+    }
+
+    return `В CSV ${csvRowsCount} строк, а в PDF ${pdfPagesCount} стр.\nСтроки CSV будут повторяться по кругу.\nПродолжить печать?`
+  }
+
   const getCycledIndex = (index: number, size: number): number => {
     if (size <= 0) {
       return 0
@@ -590,6 +602,12 @@ export const useLabelEditor = () => {
     return getElementValue(element, state.csv.data, csvRow)
   }
 
+  const clearCsv = (): void => {
+    state.csv.fileName = null
+    state.csv.data = []
+    state.csv.headers = []
+  }
+
   const loadCsv = async (file: File): Promise<void> => {
     state.csv.fileName = file.name
 
@@ -608,6 +626,7 @@ export const useLabelEditor = () => {
           resolve()
         },
         error: () => {
+          clearCsv()
           resolve()
         },
       })
@@ -690,9 +709,7 @@ export const useLabelEditor = () => {
     state.manualLabelCount = data.manualLabelCount
     state.pdf.copies = data.pdfCopies
     state.printSheet = normalizePrintSheet(data.printSheet)
-    state.csv.fileName = null
-    state.csv.data = []
-    state.csv.headers = []
+    clearCsv()
 
     clearPdfLabels()
 
@@ -744,8 +761,16 @@ export const useLabelEditor = () => {
       const hasCsvFile = Boolean(state.csv.fileName)
       const csvRowsCount = rows.length
       const pdfPagesCount = state.pdf.pages.length
+      if (hasCsvFile && pdfPagesCount > 0) {
+        const mismatchWarning = getCsvPdfMismatchWarning(csvRowsCount, pdfPagesCount)
+        if (mismatchWarning && !confirm(mismatchWarning)) {
+          return
+        }
+      }
+
       const baseLabelCount = getBaseLabelCount(hasCsvFile, csvRowsCount, pdfPagesCount)
-      const copiesPerLabel = pdfPagesCount === 1 ? Math.max(1, Math.floor(state.manualLabelCount)) : 1
+      const copiesPerLabel =
+        !hasCsvFile && pdfPagesCount === 1 ? Math.max(1, Math.floor(state.manualLabelCount)) : 1
       const totalLabels = baseLabelCount * copiesPerLabel
       if (totalLabels <= 0) {
         alert('Нет данных для печати. Проверьте CSV или задайте количество вручную.')
@@ -836,6 +861,7 @@ export const useLabelEditor = () => {
     updateSelectedProp,
     updateElement,
     getValue,
+    clearCsv,
     loadCsv,
     loadImageForSelected,
     loadPdfLabels,

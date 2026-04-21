@@ -36,6 +36,8 @@ const printLabel = computed(() => {
   return 'Печать A4'
 })
 
+const csvDataRowCount = computed(() => Math.max(0, editor.state.csv.data.length - 1))
+
 onMounted(() => {
   editor.initDefaults()
   void loadPresetsIndex()
@@ -62,6 +64,10 @@ const onPatchElement = (payload: { id: string; patch: Partial<LabelElement> }): 
 
 const onLoadCsv = async (file: File): Promise<void> => {
   await editor.loadCsv(file)
+}
+
+const onClearCsv = (): void => {
+  editor.clearCsv()
 }
 
 const onLoadPdf = async (file: File): Promise<void> => {
@@ -231,6 +237,7 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       :selected-id='editor.state.selectedId'
       :manual-label-count='editor.state.manualLabelCount'
       :has-csv='Boolean(editor.state.csv.fileName)'
+      :csv-row-count='csvDataRowCount'
       :pdf-file-name='editor.state.pdf.fileName'
       :pdf-page-count='editor.state.pdf.pageCount'
       :pdf-loading='editor.pdfLoading.value'
@@ -243,6 +250,7 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       :preset-applying='presetApplying'
       :reset-token='resetToken'
       @load-csv='onLoadCsv'
+      @clear-csv='onClearCsv'
       @load-pdf='onLoadPdf'
       @clear-pdf='onClearPdf'
       @reload-presets='loadPresetsIndex'

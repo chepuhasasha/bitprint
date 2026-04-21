@@ -18,6 +18,7 @@ const props = defineProps<{
   selectedId: string | null
   manualLabelCount: number
   hasCsv: boolean
+  csvRowCount: number
   pdfFileName: string | null
   pdfPageCount: number
   pdfLoading: boolean
@@ -36,6 +37,7 @@ const pdfInputRef = ref<HTMLInputElement | null>(null)
 
 const emit = defineEmits<{
   (event: 'load-csv', payload: File): void
+  (event: 'clear-csv'): void
   (event: 'load-pdf', payload: File): void
   (event: 'clear-pdf'): void
   (event: 'select-layer', payload: string): void
@@ -54,6 +56,13 @@ const onCsvSelected = (event: Event): void => {
   }
 
   emit('load-csv', file)
+}
+
+const onClearCsv = (): void => {
+  emit('clear-csv')
+  if (csvInputRef.value) {
+    csvInputRef.value.value = ''
+  }
 }
 
 const onPdfSelected = (event: Event): void => {
@@ -86,8 +95,66 @@ const onManualCountChange = (event: Event): void => {
 }
 
 const hasPdfFile = computed(() => Boolean(props.pdfFileName))
-const showCountInput = computed(() => (!props.hasCsv && !hasPdfFile.value) || (hasPdfFile.value && props.pdfPageCount <= 1))
-const countLabel = computed(() => (!props.hasCsv && !hasPdfFile.value ? 'Количество' : 'Копий'))
+const pdfLoadingProgress = computed(() => {
+  const match = props.pdfLoadingText.match(/(\d+)\s*\/\s*(\d+)/)
+  if (!match) {
+    return 0
+  }
+
+  return Number(match[1])
+})
+const normalizedManualCount = computed(() => Math.max(1, Math.floor(props.manualLabelCount)))
+const hasPdfPages = computed(() => props.pdfPageCount > 0)
+const baseLabelCount = computed(() => {
+  if (props.hasCsv && hasPdfPages.value) {
+    return Math.max(props.csvRowCount, props.pdfPageCount)
+  }
+
+  if (props.hasCsv) {
+    return props.csvRowCount
+  }
+
+  if (hasPdfPages.value) {
+    return props.pdfPageCount
+  }
+
+  return normalizedManualCount.value
+})
+const copiesPerLabel = computed(() => (!props.hasCsv && props.pdfPageCount === 1 ? normalizedManualCount.value : 1))
+const totalLabels = computed(() => baseLabelCount.value * copiesPerLabel.value)
+const printScenarioHint = computed(() => {
+  if (props.hasCsv && hasPdfPages.value) {
+    if (props.pdfPageCount === 1) {
+      return 'Количество берется из CSV, единственная страница PDF повторяется для каждой строки.'
+    }
+
+    if (props.csvRowCount > props.pdfPageCount) {
+      return 'CSV строк больше: страницы PDF повторяются по кругу.'
+    }
+
+    if (props.csvRowCount < props.pdfPageCount) {
+      return 'PDF страниц больше: строки CSV повторяются по кругу.'
+    }
+
+    return 'CSV и PDF совпадают 1 к 1.'
+  }
+
+  if (props.hasCsv) {
+    return 'По одной этикетке на каждую строку CSV.'
+  }
+
+  if (hasPdfPages.value) {
+    if (props.pdfPageCount === 1) {
+      return `Одна страница PDF печатается ${copiesPerLabel.value} раз.`
+    }
+
+    return 'По одной этикетке на каждую страницу PDF.'
+  }
+
+  return 'Печать без данных из CSV/PDF по полю «Количество».'
+})
+const showCountInput = computed(() => !props.hasCsv && (!hasPdfFile.value || props.pdfPageCount <= 1))
+const countLabel = computed(() => (!hasPdfFile.value ? 'Количество' : 'Копий'))
 
 const presetsModalOpen = ref(false)
 const presetSearch = ref('')
@@ -158,16 +225,25 @@ watch(
 <template lang="pug">
 aside.left-sidebar
   h2.panel-title База данных (CSV)
-  input.csv-input(ref='csvInputRef' type='file' accept='.csv,.txt' @change='onCsvSelected')
+  .file-input-row
+    input.csv-input(ref='csvInputRef' type='file' accept='.csv,.txt' @change='onCsvSelected')
+    .file-input-actions(v-if='hasCsv')
+      span.file-count {{ csvRowCount }}
+      button.file-clear-btn(type='button' :aria-label='"Очистить CSV"' @click='onClearCsv') ×
 
   h2.panel-title PDF этикетки
-  input.csv-input(ref='pdfInputRef' type='file' accept='.pdf,application/pdf' :disabled='pdfLoading' @change='onPdfSelected')
-  p.pdf-loading(v-if='pdfLoading') {{ pdfLoadingText || 'Загрузка PDF...' }}
-  p.pdf-meta(v-else-if='pdfFileName') {{ pdfFileName }} ({{ pdfPageCount }} стр.)
+  .file-input-row
+    input.csv-input(ref='pdfInputRef' type='file' accept='.pdf,application/pdf' :disabled='pdfLoading' @change='onPdfSelected')
+    .file-input-actions(v-if='pdfLoading')
+      span.file-count {{ pdfLoadingProgress }}
+    .file-input-actions(v-else-if='hasPdfFile')
+      span.file-count {{ pdfPageCount }}
+      button.file-clear-btn(type='button' :disabled='pdfLoading' :aria-label='"Очистить PDF"' @click='onClearPdf') ×
   label.manual-count(v-if='showCountInput')
     span {{ countLabel }}
     input(type='number' min='1' step='1' :value='manualLabelCount' :disabled='pdfLoading' @change='onManualCountChange')
-  button.pdf-clear-btn(v-if='pdfFileName' :disabled='pdfLoading' @click='onClearPdf') Отключить PDF режим
+  p.print-summary Итого: {{ totalLabels }}
+  p.print-summary.print-summary--muted {{ printScenarioHint }}
 
   .section-header
     h2.panel-title Параметры A4 (мм)
@@ -277,7 +353,9 @@ aside.left-sidebar
   background: #fff;
   border: 1px solid #dbe2ea;
   border-radius: 0.4rem;
+  flex: 1 1 auto;
   font-size: 0.72rem;
+  min-width: 0;
   padding: 0.25rem;
 }
 
@@ -291,6 +369,50 @@ aside.left-sidebar
   font-weight: 700;
   margin-right: 0.4rem;
   padding: 0.25rem 0.4rem;
+}
+
+.file-input-row {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.file-input-actions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.22rem;
+}
+
+.file-count {
+  color: #1e3a8a;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 1.3rem;
+  text-align: right;
+}
+
+.file-clear-btn {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  color: #1d4ed8;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.86rem;
+  font-weight: 700;
+  height: 1.35rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 1.35rem;
+}
+
+.file-clear-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .manual-count {
@@ -312,35 +434,16 @@ aside.left-sidebar
   padding: 0.3rem 0.4rem;
 }
 
-.pdf-meta {
+.print-summary {
   color: #1e3a8a;
   font-size: 0.72rem;
   font-weight: 700;
   margin: 0;
-  word-break: break-word;
 }
 
-.pdf-loading {
-  color: #1d4ed8;
-  font-size: 0.72rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.pdf-clear-btn {
-  background: #fff;
-  border: 1px solid #bfdbfe;
-  border-radius: 0.35rem;
-  color: #1d4ed8;
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.3rem 0.45rem;
-}
-
-.pdf-clear-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+.print-summary--muted {
+  color: #64748b;
+  font-weight: 600;
 }
 
 .section-header {
