@@ -1,0 +1,15 @@
+[
+  {
+    "name": "15 x 15 mm [CL576MP]",
+    "file": "CL576MP_15x15.json",
+    "prices": [
+      {
+        "sheets": 25,
+        "labels": 4400,
+        "price_per_sheet": 488,
+        "price": 12200
+      }
+      и так далее
+    ]
+  }
+]
