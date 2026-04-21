@@ -11,6 +11,8 @@ import { useLabelEditor } from './composables/useLabelEditor'
 interface PresetIndexEntry {
   name: string
   file: string
+  minSheetPrice: number | null
+  maxSheetPrice: number | null
 }
 
 const editor = useLabelEditor()
@@ -100,6 +102,11 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+const toPositiveNumber = (value: unknown): number | null => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
 const loadPresetsIndex = async (): Promise<void> => {
   presetsLoading.value = true
   presetsError.value = ''
@@ -117,10 +124,23 @@ const loadPresetsIndex = async (): Promise<void> => {
 
     const nextPresets = data
       .filter((item): item is Record<string, unknown> => isRecord(item))
-      .map((item) => ({
-        name: String(item.name ?? '').trim(),
-        file: String(item.file ?? '').trim(),
-      }))
+      .map((item) => {
+        const prices = Array.isArray(item.prices)
+          ? item.prices
+              .filter((entry): entry is Record<string, unknown> => isRecord(entry))
+              .map((entry) => toPositiveNumber(entry.price_per_sheet))
+              .filter((price): price is number => price !== null)
+          : []
+        const minSheetPrice = prices.length > 0 ? Math.min(...prices) : null
+        const maxSheetPrice = prices.length > 0 ? Math.max(...prices) : null
+
+        return {
+          name: String(item.name ?? '').trim(),
+          file: String(item.file ?? '').trim(),
+          minSheetPrice,
+          maxSheetPrice,
+        }
+      })
       .filter((item) => item.name.length > 0 && item.file.length > 0)
 
     presets.value = nextPresets

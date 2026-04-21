@@ -8,6 +8,8 @@ import type { LabelElement, PrintSheetSettings } from '../../domain/types'
 interface PresetListEntry {
   name: string
   file: string
+  minSheetPrice: number | null
+  maxSheetPrice: number | null
 }
 
 const props = defineProps<{
@@ -101,10 +103,26 @@ const filteredPresets = computed(() => {
 
   return props.presets.filter((preset) => {
     const name = preset.name.toLowerCase()
-    const file = preset.file.toLowerCase()
-    return name.includes(query) || file.includes(query)
+    return name.includes(query)
   })
 })
+
+const priceFormatter = new Intl.NumberFormat('ru-RU')
+
+const formatPriceRange = (preset: PresetListEntry): string => {
+  const min = preset.minSheetPrice
+  const max = preset.maxSheetPrice
+
+  if (min == null || max == null) {
+    return '₩— / лист'
+  }
+
+  if (min === max) {
+    return `₩${priceFormatter.format(min)} / лист`
+  }
+
+  return `₩${priceFormatter.format(min)}–₩${priceFormatter.format(max)} / лист`
+}
 
 const onOpenPresetsModal = (): void => {
   presetsModalOpen.value = true
@@ -217,7 +235,7 @@ aside.left-sidebar
         input.presets-search-input(
           v-model='presetSearch'
           type='search'
-          placeholder='Поиск по названию или файлу'
+          placeholder='Поиск по названию'
           autocomplete='off'
         )
 
@@ -230,7 +248,7 @@ aside.left-sidebar
         li.presets-item(v-for='preset in filteredPresets' :key='preset.file')
           button.presets-item-btn(type='button' :disabled='presetApplying' @click='onApplyPreset(preset.file)')
             span.presets-item-name {{ preset.name }}
-            span.presets-item-file {{ preset.file }}
+            span.presets-item-price {{ formatPriceRange(preset) }}
 </template>
 
 <style scoped lang="scss">
@@ -534,10 +552,10 @@ aside.left-sidebar
   font-weight: 700;
 }
 
-.presets-item-file {
+.presets-item-price {
   color: #64748b;
-  font-size: 0.66rem;
-  font-weight: 600;
+  font-size: 0.69rem;
+  font-weight: 700;
 }
 
 @media (max-width: 960px) {

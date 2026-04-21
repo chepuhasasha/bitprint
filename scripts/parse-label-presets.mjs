@@ -283,11 +283,14 @@ const sanitizeCode = (code) => {
   return cleaned || 'UNKNOWN'
 }
 
-const buildPresetName = ({ labelWidthMm, labelHeightMm, goodsCode }) => {
+const buildPresetName = ({ labelWidthMm, labelHeightMm, sourceName = '' }) => {
   const width = formatDimension(Number(labelWidthMm))
   const height = formatDimension(Number(labelHeightMm))
-  const code = sanitizeCode(goodsCode)
-  return `${width} x ${height} mm [${code}]`
+  const hasPhi = String(sourceName).includes('Φ')
+  if (hasPhi) {
+    return `Φ${width}`
+  }
+  return `${width} x ${height} mm`
 }
 
 const makePresetFileName = (goodsCode, widthMm, heightMm, usedFileNames) => {
@@ -429,12 +432,12 @@ const main = async () => {
       const detail = parseProductDetail(detailHtml, product.url)
       const normalizedGoodsCode = sanitizeCode(detail.goodsCode)
 
-      if (normalizedGoodsCode.startsWith('SL')) {
+      if (!normalizedGoodsCode.startsWith('CL')) {
         skipped.push({
           url: product.url,
           goodsCode: normalizedGoodsCode,
         })
-        console.log(`[parse] ${position} SKIP ${normalizedGoodsCode} (SL prefix)`)
+        console.log(`[parse] ${position} SKIP ${normalizedGoodsCode} (only CL*)`)
         return null
       }
 
@@ -458,7 +461,12 @@ const main = async () => {
 
       return {
         indexRow: {
-          name: buildPresetName(detail),
+          name: buildPresetName({
+            ...detail,
+            sourceName: product.sourceName,
+          }),
+          code: normalizedGoodsCode,
+          url: product.url,
           file: fileName,
           prices,
         },
