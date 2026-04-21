@@ -4,7 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { buildBarcodeSvgMarkup } from '../../domain/barcode'
 import { PREVIEW_PX_PER_MM, mmToPx, roundMm } from '../../domain/constants'
 import type { CodeElement, LabelElement, LineElement, TextElement } from '../../domain/types'
-import { clamp, getElementBox } from '../../domain/utils'
+import { getElementBox } from '../../domain/utils'
 
 interface MoveElementDrag {
   mode: 'move-element'
@@ -21,6 +21,7 @@ interface ResizeDrag {
   startClientY: number
   initialWidth: number
   initialHeight: number
+  rotation: number
 }
 
 interface LinePointDrag {
@@ -33,7 +34,16 @@ interface LinePointDrag {
   initialY: number
 }
 
-type DragState = MoveElementDrag | ResizeDrag | LinePointDrag
+interface RotateDrag {
+  mode: 'rotate'
+  id: string
+  centerClientX: number
+  centerClientY: number
+  startPointerAngle: number
+  initialRotation: number
+}
+
+type DragState = MoveElementDrag | ResizeDrag | LinePointDrag | RotateDrag
 
 const props = defineProps<{
   labelWidthMm: number
@@ -53,11 +63,13 @@ const emit = defineEmits<{
 const barcodeMarkup = ref<Record<string, string>>({})
 const dragState = ref<DragState | null>(null)
 const workspaceRef = ref<HTMLElement | null>(null)
+const canvasRef = ref<HTMLElement | null>(null)
 const workspaceSize = ref({
   width: 0,
   height: 0,
 })
 let workspaceResizeObserver: ResizeObserver | null = null
+const ROTATE_HANDLE_DISTANCE_PX = 20
 
 const parsePixels = (value: string): number => {
   const parsed = Number.parseFloat(value)
@@ -137,14 +149,103 @@ const labelStyle = computed(() => {
   }
 })
 
+const getRotation = (angle: unknown): number => {
+  const normalized = Number(angle)
+  return Number.isFinite(normalized) ? roundMm(normalized) : 0
+}
+
+const rotatePoint = (
+  x: number,
+  y: number,
+  centerX: number,
+  centerY: number,
+  angleDeg: number,
+): { x: number; y: number } => {
+  if (angleDeg === 0) {
+    return { x, y }
+  }
+
+  const angleRad = (angleDeg * Math.PI) / 180
+  const cos = Math.cos(angleRad)
+  const sin = Math.sin(angleRad)
+  const dx = x - centerX
+  const dy = y - centerY
+
+  return {
+    x: centerX + dx * cos - dy * sin,
+    y: centerY + dx * sin + dy * cos,
+  }
+}
+
+const getPointerAngle = (x: number, y: number, centerX: number, centerY: number): number => {
+  return (Math.atan2(y - centerY, x - centerX) * 180) / Math.PI
+}
+
+const projectDeltaToElementLocalSpace = (
+  dxMm: number,
+  dyMm: number,
+  rotationDeg: number,
+): { dx: number; dy: number } => {
+  const angleRad = (rotationDeg * Math.PI) / 180
+  const cos = Math.cos(angleRad)
+  const sin = Math.sin(angleRad)
+
+  return {
+    dx: dxMm * cos + dyMm * sin,
+    dy: -dxMm * sin + dyMm * cos,
+  }
+}
+
+const normalizeAngleDelta = (value: number): number => {
+  let normalized = value
+  while (normalized > 180) {
+    normalized -= 360
+  }
+  while (normalized < -180) {
+    normalized += 360
+  }
+  return normalized
+}
+
+const normalizeRotation = (value: number): number => {
+  let normalized = value
+  while (normalized > 180) {
+    normalized -= 360
+  }
+  while (normalized <= -180) {
+    normalized += 360
+  }
+  return roundMm(normalized)
+}
+
+const getRotatedPointForElement = (
+  element: Exclude<LabelElement, LineElement>,
+  x: number,
+  y: number,
+): { x: number; y: number } => {
+  const centerX = element.x + element.width / 2
+  const centerY = element.y + element.height / 2
+  return rotatePoint(x, y, centerX, centerY, getRotation(element.rotation))
+}
+
 const getNodeStyle = (element: LabelElement): Record<string, string> => {
   const box = getElementBox(element)
-  return {
+  const style: Record<string, string> = {
     left: `${mmToCanvasPx(box.left)}px`,
     top: `${mmToCanvasPx(box.top)}px`,
     width: `${Math.max(1, mmToCanvasPx(box.width))}px`,
     height: `${Math.max(1, mmToCanvasPx(box.height))}px`,
   }
+
+  if (element.type !== 'line') {
+    const angle = getRotation(element.rotation)
+    if (angle !== 0) {
+      style.transformOrigin = '50% 50%'
+      style.transform = `rotate(${angle}deg)`
+    }
+  }
+
+  return style
 }
 
 const frameStyle = computed(() => {
@@ -152,12 +253,22 @@ const frameStyle = computed(() => {
     return {}
   }
 
-  return {
+  const style: Record<string, string> = {
     left: `${mmToCanvasPx(selectedBox.value.left)}px`,
     top: `${mmToCanvasPx(selectedBox.value.top)}px`,
     width: `${Math.max(1, mmToCanvasPx(selectedBox.value.width))}px`,
     height: `${Math.max(1, mmToCanvasPx(selectedBox.value.height))}px`,
   }
+
+  if (selectedElement.value && selectedElement.value.type !== 'line') {
+    const angle = getRotation(selectedElement.value.rotation)
+    if (angle !== 0) {
+      style.transformOrigin = '50% 50%'
+      style.transform = `rotate(${angle}deg)`
+    }
+  }
+
+  return style
 })
 
 const resizeHandleStyle = computed(() => {
@@ -165,9 +276,33 @@ const resizeHandleStyle = computed(() => {
     return {}
   }
 
+  const point = getRotatedPointForElement(
+    selectedElement.value,
+    selectedElement.value.x + selectedElement.value.width,
+    selectedElement.value.y + selectedElement.value.height,
+  )
+
   return {
-    left: `${mmToCanvasPx(selectedElement.value.x + selectedElement.value.width)}px`,
-    top: `${mmToCanvasPx(selectedElement.value.y + selectedElement.value.height)}px`,
+    left: `${mmToCanvasPx(point.x)}px`,
+    top: `${mmToCanvasPx(point.y)}px`,
+  }
+})
+
+const rotateHandleStyle = computed(() => {
+  if (!selectedElement.value || selectedElement.value.type === 'line') {
+    return {}
+  }
+
+  const offsetMm = ROTATE_HANDLE_DISTANCE_PX / previewPxPerMm.value
+  const point = getRotatedPointForElement(
+    selectedElement.value,
+    selectedElement.value.x + selectedElement.value.width / 2,
+    selectedElement.value.y - offsetMm,
+  )
+
+  return {
+    left: `${mmToCanvasPx(point.x)}px`,
+    top: `${mmToCanvasPx(point.y)}px`,
   }
 })
 
@@ -294,6 +429,13 @@ const getCodeStyle = (_element: CodeElement): Record<string, string> => {
   }
 }
 
+const getImageStyle = (element: Extract<LabelElement, { type: 'image' }>): Record<string, string> => {
+  return {
+    objectFit: element.scaleMode === 'stretch' ? 'fill' : 'contain',
+    objectPosition: 'center',
+  }
+}
+
 const startDrag = (state: DragState, event: MouseEvent): void => {
   event.preventDefault()
   event.stopPropagation()
@@ -312,6 +454,20 @@ const stopDrag = (): void => {
 const onMouseMove = (event: MouseEvent): void => {
   const current = dragState.value
   if (!current) {
+    return
+  }
+
+  if (current.mode === 'rotate') {
+    const pointerAngle = getPointerAngle(event.clientX, event.clientY, current.centerClientX, current.centerClientY)
+    const deltaAngle = normalizeAngleDelta(pointerAngle - current.startPointerAngle)
+
+    emit('patch-element', {
+      id: current.id,
+      patch: {
+        rotation: normalizeRotation(current.initialRotation + deltaAngle),
+      } as Partial<LabelElement>,
+    })
+
     return
   }
 
@@ -337,8 +493,8 @@ const onMouseMove = (event: MouseEvent): void => {
       return
     }
 
-    const nextX = clamp(roundMm(current.initial.x + dxMm), 0, Math.max(0, props.labelWidthMm - element.width))
-    const nextY = clamp(roundMm(current.initial.y + dyMm), 0, Math.max(0, props.labelHeightMm - element.height))
+    const nextX = roundMm(current.initial.x + dxMm)
+    const nextY = roundMm(current.initial.y + dyMm)
 
     emit('patch-element', {
       id: element.id,
@@ -352,8 +508,9 @@ const onMouseMove = (event: MouseEvent): void => {
   }
 
   if (current.mode === 'resize') {
-    const nextWidth = Math.max(0.1, roundMm(current.initialWidth + dxMm))
-    const nextHeight = Math.max(0.1, roundMm(current.initialHeight + dyMm))
+    const localDelta = projectDeltaToElementLocalSpace(dxMm, dyMm, current.rotation)
+    const nextWidth = Math.max(0.1, roundMm(current.initialWidth + localDelta.dx))
+    const nextHeight = Math.max(0.1, roundMm(current.initialHeight + localDelta.dy))
 
     emit('patch-element', {
       id: current.id,
@@ -427,6 +584,7 @@ const onResizeHandleMouseDown = (event: MouseEvent): void => {
       startClientY: event.clientY,
       initialWidth: selectedElement.value.width,
       initialHeight: selectedElement.value.height,
+      rotation: getRotation(selectedElement.value.rotation),
     },
     event,
   )
@@ -450,11 +608,33 @@ const onLinePointMouseDown = (event: MouseEvent, point: 1 | 2): void => {
     event,
   )
 }
+
+const onRotateHandleMouseDown = (event: MouseEvent): void => {
+  if (!selectedElement.value || selectedElement.value.type === 'line' || !canvasRef.value) {
+    return
+  }
+
+  const canvasBounds = canvasRef.value.getBoundingClientRect()
+  const centerX = canvasBounds.left + mmToCanvasPx(selectedElement.value.x + selectedElement.value.width / 2)
+  const centerY = canvasBounds.top + mmToCanvasPx(selectedElement.value.y + selectedElement.value.height / 2)
+
+  startDrag(
+    {
+      mode: 'rotate',
+      id: selectedElement.value.id,
+      centerClientX: centerX,
+      centerClientY: centerY,
+      startPointerAngle: getPointerAngle(event.clientX, event.clientY, centerX, centerY),
+      initialRotation: getRotation(selectedElement.value.rotation),
+    },
+    event,
+  )
+}
 </script>
 
 <template lang="pug">
 section.workspace#editor-workspace(ref='workspaceRef')
-  #label-canvas(:style='labelStyle')
+  #label-canvas(ref='canvasRef' :style='labelStyle')
     .grid-background
 
     .content-layer
@@ -469,7 +649,7 @@ section.workspace#editor-workspace(ref='workspaceRef')
           .text-render(:style='getTextStyle(element)') {{ getDisplayValue(element) }}
 
         template(v-else-if='element.type === "image"')
-          img.element-image(:src='getDisplayValue(element)' alt='' draggable='false')
+          img.element-image(:style='getImageStyle(element)' :src='getDisplayValue(element)' alt='' draggable='false')
 
         template(v-else-if='element.type === "line"')
           .line-render(:style='getLineStyle(element)')
@@ -479,6 +659,12 @@ section.workspace#editor-workspace(ref='workspaceRef')
 
     .control-layer
       .selection-frame(v-if='selectedElement' :style='frameStyle')
+
+      .ctrl-handle.rotate-handle(
+        v-if='selectedElement && selectedElement.type !== "line"'
+        :style='rotateHandleStyle'
+        @mousedown='onRotateHandleMouseDown'
+      )
 
       .ctrl-handle.resize-handle(
         v-if='selectedElement && selectedElement.type !== "line"'
@@ -591,6 +777,7 @@ section.workspace#editor-workspace(ref='workspaceRef')
 .ctrl-handle {
   background: #fff;
   border: 0.5px solid #0055ff;
+  border-radius: 50%;
   height: 6px;
   pointer-events: auto;
   position: absolute;
@@ -609,6 +796,21 @@ section.workspace#editor-workspace(ref='workspaceRef')
 
 .line-handle {
   cursor: crosshair;
+}
+
+.rotate-handle {
+  border-color: #ea580c;
+  cursor: grab;
+  height: 8px;
+  width: 8px;
+}
+
+.rotate-handle:active {
+  cursor: grabbing;
+}
+
+.rotate-handle:hover {
+  background: #ea580c;
 }
 
 .canvas-size-indicator {

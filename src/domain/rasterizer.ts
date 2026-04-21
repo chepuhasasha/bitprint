@@ -225,7 +225,10 @@ export const renderLine = (
   return canvas
 }
 
-export const renderImage = (element: { width: number; height: number }, src: string): Promise<HTMLCanvasElement> => {
+export const renderImage = (
+  element: { width: number; height: number; scaleMode: 'contain' | 'stretch' },
+  src: string,
+): Promise<HTMLCanvasElement> => {
   return new Promise((resolve) => {
     const canvas = document.createElement('canvas')
     canvas.width = element.width
@@ -241,7 +244,17 @@ export const renderImage = (element: { width: number; height: number }, src: str
       const ctx = canvas.getContext('2d')
       if (ctx) {
         ctx.imageSmoothingEnabled = true
-        ctx.drawImage(image, 0, 0, element.width, element.height)
+        if (element.scaleMode === 'stretch') {
+          ctx.drawImage(image, 0, 0, element.width, element.height)
+        } else {
+          const scale = Math.min(element.width / image.width, element.height / image.height)
+          const drawWidth = image.width * scale
+          const drawHeight = image.height * scale
+          const offsetX = Math.floor((element.width - drawWidth) / 2)
+          const offsetY = Math.floor((element.height - drawHeight) / 2)
+
+          ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight)
+        }
       }
       resolve(canvas)
     }
@@ -282,6 +295,7 @@ export const renderElement = async (
       {
         width: toPx(element.width, pxPerMm),
         height: toPx(element.height, pxPerMm),
+        scaleMode: element.scaleMode,
       },
       value,
     )

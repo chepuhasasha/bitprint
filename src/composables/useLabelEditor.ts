@@ -18,6 +18,7 @@ const NUMERIC_PROPS = new Set([
   'y',
   'width',
   'height',
+  'rotation',
   'fontSize',
   'x1',
   'y1',
@@ -72,7 +73,7 @@ const PRINT_SHEET_KEYS = [
   'gapVerticalMm',
 ] as const
 
-const TEXT_ELEMENT_KEYS = [
+const TEXT_ELEMENT_KEYS_LEGACY = [
   'id',
   'type',
   'dataSource',
@@ -87,7 +88,23 @@ const TEXT_ELEMENT_KEYS = [
   'bold',
 ] as const
 
-const CODE_ELEMENT_KEYS = [
+const TEXT_ELEMENT_KEYS = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'rotation',
+  'staticValue',
+  'fontSize',
+  'align',
+  'bold',
+] as const
+
+const CODE_ELEMENT_KEYS_LEGACY = [
   'id',
   'type',
   'dataSource',
@@ -101,7 +118,22 @@ const CODE_ELEMENT_KEYS = [
   'scaleMode',
 ] as const
 
-const IMAGE_ELEMENT_KEYS = [
+const CODE_ELEMENT_KEYS = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'rotation',
+  'staticValue',
+  'codeType',
+  'scaleMode',
+] as const
+
+const IMAGE_ELEMENT_KEYS_LEGACY = [
   'id',
   'type',
   'dataSource',
@@ -111,6 +143,46 @@ const IMAGE_ELEMENT_KEYS = [
   'width',
   'height',
   'staticValue',
+] as const
+
+const IMAGE_ELEMENT_KEYS = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'rotation',
+  'staticValue',
+] as const
+
+const IMAGE_ELEMENT_KEYS_WITH_SCALE_MODE_LEGACY = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'staticValue',
+  'scaleMode',
+] as const
+
+const IMAGE_ELEMENT_KEYS_WITH_SCALE_MODE = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'rotation',
+  'staticValue',
+  'scaleMode',
 ] as const
 
 const LINE_ELEMENT_KEYS = [
@@ -145,6 +217,10 @@ const hasExactKeys = (value: Record<string, unknown>, keys: readonly string[]): 
   return objectKeys.length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
 }
 
+const hasExactKeysAny = (value: Record<string, unknown>, keySets: ReadonlyArray<readonly string[]>): boolean => {
+  return keySets.some((keys) => hasExactKeys(value, keys))
+}
+
 const isFiniteNumber = (value: unknown): value is number => {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -165,18 +241,25 @@ const isTextAlign = (value: unknown): value is 'left' | 'center' | 'right' => {
   return value === 'left' || value === 'center' || value === 'right'
 }
 
+const isImageScaleMode = (value: unknown): value is 'contain' | 'stretch' => {
+  return value === 'contain' || value === 'stretch'
+}
+
 const isCommonElementPropsValid = (value: Record<string, unknown>): boolean => {
   return isNonEmptyString(value.id) && isDataSource(value.dataSource) && isString(value.csvColumn)
 }
 
 const isPositionedElementPropsValid = (value: Record<string, unknown>): boolean => {
+  const hasValidRotation = value.rotation === undefined || isFiniteNumber(value.rotation)
+
   return (
     isFiniteNumber(value.x) &&
     isFiniteNumber(value.y) &&
     isFiniteNumber(value.width) &&
     value.width > 0 &&
     isFiniteNumber(value.height) &&
-    value.height > 0
+    value.height > 0 &&
+    hasValidRotation
   )
 }
 
@@ -187,7 +270,7 @@ const isValidElement = (value: unknown): value is LabelElement => {
 
   if (value.type === 'text') {
     return (
-      hasExactKeys(value, TEXT_ELEMENT_KEYS) &&
+      hasExactKeysAny(value, [TEXT_ELEMENT_KEYS, TEXT_ELEMENT_KEYS_LEGACY]) &&
       isCommonElementPropsValid(value) &&
       isPositionedElementPropsValid(value) &&
       isString(value.staticValue) &&
@@ -200,7 +283,7 @@ const isValidElement = (value: unknown): value is LabelElement => {
 
   if (value.type === 'code') {
     return (
-      hasExactKeys(value, CODE_ELEMENT_KEYS) &&
+      hasExactKeysAny(value, [CODE_ELEMENT_KEYS, CODE_ELEMENT_KEYS_LEGACY]) &&
       isCommonElementPropsValid(value) &&
       isPositionedElementPropsValid(value) &&
       isString(value.staticValue) &&
@@ -212,10 +295,16 @@ const isValidElement = (value: unknown): value is LabelElement => {
 
   if (value.type === 'image') {
     return (
-      hasExactKeys(value, IMAGE_ELEMENT_KEYS) &&
+      hasExactKeysAny(value, [
+        IMAGE_ELEMENT_KEYS_WITH_SCALE_MODE,
+        IMAGE_ELEMENT_KEYS_WITH_SCALE_MODE_LEGACY,
+        IMAGE_ELEMENT_KEYS,
+        IMAGE_ELEMENT_KEYS_LEGACY,
+      ]) &&
       isCommonElementPropsValid(value) &&
       isPositionedElementPropsValid(value) &&
-      isString(value.staticValue)
+      isString(value.staticValue) &&
+      (value.scaleMode === undefined || isImageScaleMode(value.scaleMode))
     )
   }
 
@@ -316,9 +405,29 @@ const setAbsoluteMmBox = (
   element.style.boxSizing = 'border-box'
 }
 
+const getRotation = (value: unknown): number => {
+  const rotation = Number(value)
+  return Number.isFinite(rotation) ? roundMm(rotation) : 0
+}
+
+const getImageScaleMode = (value: unknown): 'contain' | 'stretch' => {
+  return value === 'stretch' ? 'stretch' : 'contain'
+}
+
+const applyRotationStyle = (node: HTMLElement, rotation: unknown): void => {
+  const angle = getRotation(rotation)
+  if (angle === 0) {
+    return
+  }
+
+  node.style.transformOrigin = '50% 50%'
+  node.style.transform = `rotate(${angle}deg)`
+}
+
 const createTextNode = (element: Extract<LabelElement, { type: 'text' }>, value: string): HTMLElement => {
   const node = document.createElement('div')
   setAbsoluteMmBox(node, element.x, element.y, element.width, element.height)
+  applyRotationStyle(node, element.rotation)
   node.style.whiteSpace = 'pre-wrap'
   node.style.wordBreak = 'break-word'
   node.style.overflow = 'hidden'
@@ -335,7 +444,9 @@ const createTextNode = (element: Extract<LabelElement, { type: 'text' }>, value:
 const createImageNode = (element: Extract<LabelElement, { type: 'image' }>, value: string): HTMLElement => {
   const node = document.createElement('img')
   setAbsoluteMmBox(node, element.x, element.y, element.width, element.height)
-  node.style.objectFit = 'fill'
+  applyRotationStyle(node, element.rotation)
+  node.style.objectFit = element.scaleMode === 'stretch' ? 'fill' : 'contain'
+  node.style.objectPosition = 'center'
   node.style.display = 'block'
   node.draggable = false
   node.src = value
@@ -364,6 +475,7 @@ const createLineNode = (element: Extract<LabelElement, { type: 'line' }>): HTMLE
 const createBarcodeNode = (element: Extract<LabelElement, { type: 'code' }>, value: string): HTMLElement => {
   const wrapper = document.createElement('div')
   setAbsoluteMmBox(wrapper, element.x, element.y, element.width, element.height)
+  applyRotationStyle(wrapper, element.rotation)
   wrapper.style.display = 'flex'
   wrapper.style.alignItems = 'center'
   wrapper.style.justifyContent = 'center'
@@ -415,6 +527,25 @@ const createLabelDom = (elements: LabelElement[], getValue: (element: LabelEleme
   }
 
   return root
+}
+
+const normalizeElementForRuntime = (element: LabelElement): LabelElement => {
+  if (element.type === 'line') {
+    return element
+  }
+
+  if (element.type === 'image') {
+    return {
+      ...element,
+      rotation: getRotation(element.rotation),
+      scaleMode: getImageScaleMode(element.scaleMode),
+    }
+  }
+
+  return {
+    ...element,
+    rotation: getRotation(element.rotation),
+  }
 }
 
 export const useLabelEditor = () => {
@@ -499,6 +630,9 @@ export const useLabelEditor = () => {
     ;(element as unknown as Record<string, unknown>)[key] = normalized
 
     if (key === 'dataSource' && normalized === 'pdf') {
+      if (element.type === 'image') {
+        element.scaleMode = 'contain'
+      }
       applyPdfSizeToImageElement(element)
     }
   }
@@ -713,7 +847,7 @@ export const useLabelEditor = () => {
 
     clearPdfLabels()
 
-    state.elements = data.elements
+    state.elements = data.elements.map((element) => normalizeElementForRuntime(element))
     state.selectedId = state.elements[0]?.id ?? null
   }
 

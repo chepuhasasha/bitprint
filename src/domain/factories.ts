@@ -15,6 +15,7 @@ export const createDefaultElements = (): LabelElement[] => {
       y: 1,
       width: 13,
       height: 4,
+      rotation: 0,
       fontSize: 2.8,
       align: 'center',
       bold: false,
@@ -29,6 +30,7 @@ export const createDefaultElements = (): LabelElement[] => {
       y: 6,
       width: 8,
       height: 8,
+      rotation: 0,
       codeType: 'gs1datamatrix',
       scaleMode: 'integer',
     },
@@ -52,6 +54,7 @@ export const createElementByType = (type: ElementType): LabelElement => {
       y: 1,
       width: 10,
       height: 3,
+      rotation: 0,
       fontSize: 2.6,
       align: 'left',
       bold: false,
@@ -67,6 +70,7 @@ export const createElementByType = (type: ElementType): LabelElement => {
       y: 1,
       width: 7,
       height: 7,
+      rotation: 0,
       codeType: 'gs1datamatrix',
       scaleMode: 'integer',
     }
@@ -81,6 +85,8 @@ export const createElementByType = (type: ElementType): LabelElement => {
       y: 1,
       width: 10,
       height: 3,
+      rotation: 0,
+      scaleMode: 'contain',
     }
   }
 

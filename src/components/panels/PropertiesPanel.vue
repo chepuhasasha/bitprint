@@ -30,8 +30,13 @@ const boldOptions = [
   { value: 'true', label: 'Да' },
 ] as const
 
-const scaleOptions = [
+const codeScaleOptions = [
   { value: 'integer', label: 'Точное' },
+  { value: 'stretch', label: 'Растянуть' },
+] as const
+
+const imageScaleOptions = [
+  { value: 'contain', label: 'Точное' },
   { value: 'stretch', label: 'Растянуть' },
 ] as const
 
@@ -121,7 +126,12 @@ aside.properties
           option(v-for='(header, index) in csvHeaders' :key='`${header}-${index}`' :value='String(index)') Колонка {{ index + 1 }} ({{ header.slice(0, 10) }})
           option(v-if='csvHeaders.length === 0' value='0') Колонка 1
 
-      p.image-source-note(v-else) Для превью используется первая страница PDF.
+      label.field
+        span Масштаб
+        select(:value='selectedElement.scaleMode' @change='onStringUpdate("scaleMode", $event)')
+          option(v-for='option in imageScaleOptions' :key='option.value' :value='option.value') {{ option.label }}
+
+      p.image-source-note(v-if='selectedElement.dataSource === "pdf"') Для превью используется первая страница PDF.
 
     .block(v-else)
       h3 Источник данных
@@ -159,6 +169,9 @@ aside.properties
         label.field
           span Высота
           input(type='number' step='0.01' min='0.1' :value='selectedElement.height' @change='onNumberUpdate("height", $event)')
+      label.field
+        span Поворот (°)
+        input(type='number' step='0.1' :value='selectedElement.rotation' @change='onNumberUpdate("rotation", $event)')
 
     .block(v-if='selectedElement.type === "text"')
       h3 Стиль текста
@@ -185,7 +198,7 @@ aside.properties
       label.field
         span Масштаб
         select(:value='selectedElement.scaleMode' @change='onStringUpdate("scaleMode", $event)')
-          option(v-for='option in scaleOptions' :key='option.value' :value='option.value') {{ option.label }}
+          option(v-for='option in codeScaleOptions' :key='option.value' :value='option.value') {{ option.label }}
 
   .placeholder(v-else)
     | Выберите элемент

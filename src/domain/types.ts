@@ -21,6 +21,7 @@ export interface PositionedElement extends BaseElement {
   y: number
   width: number
   height: number
+  rotation: number
 }
 
 export interface TextElement extends PositionedElement {
@@ -41,6 +42,7 @@ export interface CodeElement extends PositionedElement {
 export interface ImageElement extends PositionedElement {
   type: 'image'
   staticValue: string
+  scaleMode: 'contain' | 'stretch'
 }
 
 export interface LineElement extends BaseElement {
