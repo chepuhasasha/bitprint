@@ -620,6 +620,24 @@ export const useLabelEditor = () => {
     state.selectedId = id
   }
 
+  const moveElement = (id: string, direction: 'forward' | 'backward'): void => {
+    const fromIndex = state.elements.findIndex((item) => item.id === id)
+    if (fromIndex < 0) {
+      return
+    }
+
+    const toIndex = direction === 'forward' ? fromIndex + 1 : fromIndex - 1
+    if (toIndex < 0 || toIndex >= state.elements.length) {
+      return
+    }
+
+    const [moved] = state.elements.splice(fromIndex, 1)
+    if (!moved) {
+      return
+    }
+    state.elements.splice(toIndex, 0, moved)
+  }
+
   const updateSelectedProp = (key: string, value: unknown): void => {
     const element = selectedElement.value
     if (!element) {
@@ -992,6 +1010,7 @@ export const useLabelEditor = () => {
     addElement,
     deleteElement,
     selectElement,
+    moveElement,
     updateSelectedProp,
     updateElement,
     getValue,

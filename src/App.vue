@@ -257,6 +257,7 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       @apply-preset='onApplyPreset'
       @select-layer='editor.selectElement'
       @delete-layer='editor.deleteElement'
+      @move-layer='editor.moveElement($event.id, $event.direction)'
       @update-print-sheet='editor.updatePrintSheet'
       @update-manual-label-count='editor.setManualLabelCount'
     )

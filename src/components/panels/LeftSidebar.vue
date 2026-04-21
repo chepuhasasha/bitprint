@@ -42,6 +42,7 @@ const emit = defineEmits<{
   (event: 'clear-pdf'): void
   (event: 'select-layer', payload: string): void
   (event: 'delete-layer', payload: string): void
+  (event: 'move-layer', payload: { id: string; direction: 'forward' | 'backward' }): void
   (event: 'update-print-sheet', payload: Partial<PrintSheetSettings>): void
   (event: 'update-manual-label-count', payload: number): void
   (event: 'reload-presets'): void
@@ -289,6 +290,7 @@ aside.left-sidebar
       :selected-id='selectedId'
       @select='emit("select-layer", $event)'
       @delete='emit("delete-layer", $event)'
+      @move='emit("move-layer", $event)'
     )
 
   .presets-modal-overlay(v-if='presetsModalOpen' @click.self='onClosePresetsModal')

@@ -58,7 +58,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (event: 'select', id: string): void
+  (event: 'select', id: string | null): void
   (event: 'patch-element', payload: { id: string; patch: Partial<LabelElement> }): void
 }>()
 
@@ -557,6 +557,19 @@ const onMouseMove = (event: MouseEvent): void => {
   })
 }
 
+const onWorkspaceMouseDown = (event: MouseEvent): void => {
+  if (dragState.value) {
+    return
+  }
+
+  const target = event.target as HTMLElement | null
+  if (!target || target.closest('.canvas-element') || target.closest('.ctrl-handle')) {
+    return
+  }
+
+  emit('select', null)
+}
+
 const onElementMouseDown = (event: MouseEvent, element: LabelElement): void => {
   if (props.selectedId !== element.id) {
     emit('select', element.id)
@@ -677,7 +690,7 @@ const onRotateHandleMouseDown = (event: MouseEvent): void => {
 </script>
 
 <template lang="pug">
-section.workspace#editor-workspace(ref='workspaceRef')
+section.workspace#editor-workspace(ref='workspaceRef' @mousedown='onWorkspaceMouseDown')
   #label-canvas(ref='canvasRef' :style='labelStyle')
     .grid-background
 
@@ -768,7 +781,7 @@ section.workspace#editor-workspace(ref='workspaceRef')
 
 .content-layer {
   inset: 0;
-  overflow: hidden;
+  overflow: visible;
   position: absolute;
 }
 

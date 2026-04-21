@@ -1,4 +1,6 @@
 ﻿<script setup lang="ts">
+import { computed } from 'vue'
+
 import type { LabelElement } from '../../domain/types'
 
 const props = defineProps<{
@@ -9,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: 'select', payload: string): void
   (event: 'delete', payload: string): void
+  (event: 'move', payload: { id: string; direction: 'forward' | 'backward' }): void
 }>()
 
 const icons: Record<LabelElement['type'], string> = {
@@ -36,20 +39,41 @@ const onDelete = (event: MouseEvent, id: string): void => {
   event.stopPropagation()
   emit('delete', id)
 }
+
+const onMove = (event: MouseEvent, id: string, direction: 'forward' | 'backward'): void => {
+  event.stopPropagation()
+  emit('move', { id, direction })
+}
+
+const layers = computed(() => {
+  const total = props.elements.length
+  return props.elements
+    .map((element, index) => {
+      return {
+        element,
+        canMoveUp: index < total - 1,
+        canMoveDown: index > 0,
+      }
+    })
+    .reverse()
+})
 </script>
 
 <template lang="pug">
 .layers
   .layer-item(
-    v-for='element in [...props.elements].reverse()'
-    :key='element.id'
-    :class='{ "layer-item--active": props.selectedId === element.id }'
-    @click='emit("select", element.id)'
+    v-for='layer in layers'
+    :key='layer.element.id'
+    :class='{ "layer-item--active": props.selectedId === layer.element.id }'
+    @click='emit("select", layer.element.id)'
   )
     .layer-left
-      span.icon {{ icons[element.type] }}
-      span.text {{ buildLabel(element) }}
-    button.delete-btn(title='Удалить' @click='onDelete($event, element.id)') ✕
+      span.icon {{ icons[layer.element.type] }}
+      span.text {{ buildLabel(layer.element) }}
+    .layer-actions
+      button.move-btn(title='Выше' :disabled='!layer.canMoveUp' @click='onMove($event, layer.element.id, "forward")') ↑
+      button.move-btn(title='Ниже' :disabled='!layer.canMoveDown' @click='onMove($event, layer.element.id, "backward")') ↓
+      button.delete-btn(title='Удалить' @click='onDelete($event, layer.element.id)') ✕
 </template>
 
 <style scoped lang="scss">
@@ -106,5 +130,33 @@ const onDelete = (event: MouseEvent, id: string): void => {
 
 .delete-btn:hover {
   color: #991b1b;
+}
+
+.layer-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.15rem;
+}
+
+.move-btn {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.25rem;
+  color: #334155;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  min-width: 1.25rem;
+  padding: 0.15rem 0.2rem;
+}
+
+.move-btn:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+
+.move-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
 }
 </style>
