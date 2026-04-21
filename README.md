@@ -59,7 +59,7 @@ npm run parse:label-presets
 ## Архитектура
 
 - `src/composables/useLabelEditor.ts` — состояние редактора и действия
-- `src/domain/` — типы, фабрики элементов, утилиты, растеризация
+- `src/domain/` — типы, фабрики элементов, валидация проекта и печатный DOM-рендер
 - `src/components/layout/ToolbarHeader.vue` — верхний тулбар
 - `src/components/panels/LeftSidebar.vue` — CSV и слои
 - `src/components/editor/CanvasWorkspace.vue` — рабочее полотно и drag/resize

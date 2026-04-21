@@ -72,7 +72,6 @@ export interface PdfLabelsState {
   pageWidthMm: number
   pageHeightMm: number
   pages: string[]
-  copies: number
 }
 
 export interface PrintSheetSettings {
