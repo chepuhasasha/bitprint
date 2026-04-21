@@ -1,6 +1,5 @@
 import { DEFAULT_IMAGE_DATA_URI } from './constants'
-import { roundMm } from './constants'
-import type { BarcodeType, DataSource, ElementType, LabelElement, LineElement } from './types'
+import type { DataSource, ElementType, LabelElement, LineElement } from './types'
 
 const uid = (): string => `el_${Date.now()}_${Math.floor(Math.random() * 1000)}`
 
@@ -93,96 +92,9 @@ export const createElementByType = (type: ElementType): LabelElement => {
     x2: 10,
     y2: 1,
     thickness: 0.3,
-    width: 9,
-    height: 0.3,
   }
 
   return line
-}
-
-const parseNumber = (value: unknown, fallback: number): number => {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? roundMm(parsed) : fallback
-}
-
-const normalizeCommon = (raw: Record<string, unknown>) => {
-  return {
-    id: typeof raw.id === 'string' && raw.id.length > 0 ? raw.id : uid(),
-    dataSource: (raw.dataSource === 'dynamic' ? 'dynamic' : 'static') as DataSource,
-    csvColumn: String(raw.csvColumn ?? '0'),
-  }
-}
-
-const isBarcodeType = (value: unknown): value is BarcodeType => {
-  return (
-    value === 'gs1datamatrix' ||
-    value === 'gs1qrcode' ||
-    value === 'datamatrix' ||
-    value === 'qrcode' ||
-    value === 'ean13' ||
-    value === 'code128'
-  )
-}
-
-export const normalizeLoadedElement = (raw: Record<string, unknown>): LabelElement | null => {
-  const type = raw.type as ElementType
-
-  if (!['text', 'code', 'image', 'line'].includes(String(type))) {
-    return null
-  }
-
-  const common = normalizeCommon(raw)
-
-  if (type === 'line') {
-    return {
-      ...common,
-      type,
-      x1: parseNumber(raw.x1, 1),
-      y1: parseNumber(raw.y1, 1),
-      x2: parseNumber(raw.x2, 10),
-      y2: parseNumber(raw.y2, 1),
-      thickness: Math.max(0.05, parseNumber(raw.thickness, 0.3)),
-      width: parseNumber(raw.width, 9),
-      height: parseNumber(raw.height, 0.3),
-    }
-  }
-
-  const layout = {
-    x: parseNumber(raw.x, 1),
-    y: parseNumber(raw.y, 1),
-    width: Math.max(0.1, parseNumber(raw.width, type === 'code' ? 7 : 10)),
-    height: Math.max(0.1, parseNumber(raw.height, type === 'code' ? 7 : 3)),
-  }
-
-  if (type === 'text') {
-    return {
-      ...common,
-      ...layout,
-      type,
-      staticValue: String(raw.staticValue ?? 'Системный текст'),
-      fontSize: Math.max(0.5, parseNumber(raw.fontSize, 2.6)),
-      align: raw.align === 'center' || raw.align === 'right' ? raw.align : 'left',
-      bold: Boolean(raw.bold),
-    }
-  }
-
-  if (type === 'code') {
-    return {
-      ...common,
-      ...layout,
-      type,
-      staticValue: String(raw.staticValue ?? '123456789012'),
-      codeType: isBarcodeType(raw.codeType) ? raw.codeType : 'gs1datamatrix',
-      scaleMode: raw.scaleMode === 'stretch' ? 'stretch' : 'integer',
-    }
-  }
-
-  return {
-    ...common,
-    ...layout,
-    type,
-    staticValue: String(raw.staticValue ?? DEFAULT_IMAGE_DATA_URI),
-  }
 }
 
 export { uid }

@@ -7,10 +7,10 @@ import {
   roundMm,
 } from '../domain/constants'
 import { buildBarcodeSvgMarkup } from '../domain/barcode'
-import { createDefaultElements, createElementByType, normalizeLoadedElement } from '../domain/factories'
+import { createDefaultElements, createElementByType } from '../domain/factories'
 import { loadPdfLabels as loadPdfPages } from '../domain/pdf'
 import { calculatePrintGrid, getGridLabelPosition, normalizePrintSheet } from '../domain/print'
-import type { EditorState, ElementType, LabelElement, LineElement, PrintSheetSettings } from '../domain/types'
+import type { EditorState, ElementType, LabelElement, PrintSheetSettings } from '../domain/types'
 import { getElementValue, parseNumber } from '../domain/utils'
 
 const NUMERIC_PROPS = new Set([
@@ -25,13 +25,6 @@ const NUMERIC_PROPS = new Set([
   'y2',
   'thickness',
 ])
-
-const PROJECT_VERSION = 2
-
-const syncLineDimensions = (element: LineElement): void => {
-  element.width = roundMm(Math.max(0.01, Math.abs(element.x2 - element.x1)))
-  element.height = roundMm(Math.max(0.01, Math.abs(element.y2 - element.y1)))
-}
 
 const coercePropValue = (key: string, value: unknown): unknown => {
   if (NUMERIC_PROPS.has(key)) {
@@ -59,16 +52,237 @@ const parseNonNegativeFloat = (value: unknown, fallback: number): number => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
 }
 
-const normalizeCsvRows = (value: unknown): string[][] | null => {
-  if (!Array.isArray(value)) {
-    return null
+const PROJECT_PAYLOAD_KEYS = [
+  'labelWidthMm',
+  'labelHeightMm',
+  'manualLabelCount',
+  'pdfCopies',
+  'printSheet',
+  'elements',
+] as const
+
+const PRINT_SHEET_KEYS = [
+  'pageWidthMm',
+  'pageHeightMm',
+  'marginLeftMm',
+  'marginRightMm',
+  'marginTopMm',
+  'marginBottomMm',
+  'gapHorizontalMm',
+  'gapVerticalMm',
+] as const
+
+const TEXT_ELEMENT_KEYS = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'staticValue',
+  'fontSize',
+  'align',
+  'bold',
+] as const
+
+const CODE_ELEMENT_KEYS = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'staticValue',
+  'codeType',
+  'scaleMode',
+] as const
+
+const IMAGE_ELEMENT_KEYS = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x',
+  'y',
+  'width',
+  'height',
+  'staticValue',
+] as const
+
+const LINE_ELEMENT_KEYS = [
+  'id',
+  'type',
+  'dataSource',
+  'csvColumn',
+  'x1',
+  'y1',
+  'x2',
+  'y2',
+  'thickness',
+] as const
+
+const CODE_TYPES = new Set(['gs1datamatrix', 'gs1qrcode', 'datamatrix', 'qrcode', 'ean13', 'code128'])
+
+interface SavedProjectPayload {
+  labelWidthMm: number
+  labelHeightMm: number
+  manualLabelCount: number
+  pdfCopies: number
+  printSheet: PrintSheetSettings
+  elements: LabelElement[]
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+const hasExactKeys = (value: Record<string, unknown>, keys: readonly string[]): boolean => {
+  const objectKeys = Object.keys(value)
+  return objectKeys.length === keys.length && keys.every((key) => Object.prototype.hasOwnProperty.call(value, key))
+}
+
+const isFiniteNumber = (value: unknown): value is number => {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+const isString = (value: unknown): value is string => {
+  return typeof value === 'string'
+}
+
+const isNonEmptyString = (value: unknown): value is string => {
+  return isString(value) && value.length > 0
+}
+
+const isDataSource = (value: unknown): value is 'static' | 'dynamic' => {
+  return value === 'static' || value === 'dynamic'
+}
+
+const isTextAlign = (value: unknown): value is 'left' | 'center' | 'right' => {
+  return value === 'left' || value === 'center' || value === 'right'
+}
+
+const isCommonElementPropsValid = (value: Record<string, unknown>): boolean => {
+  return isNonEmptyString(value.id) && isDataSource(value.dataSource) && isString(value.csvColumn)
+}
+
+const isPositionedElementPropsValid = (value: Record<string, unknown>): boolean => {
+  return (
+    isFiniteNumber(value.x) &&
+    isFiniteNumber(value.y) &&
+    isFiniteNumber(value.width) &&
+    value.width > 0 &&
+    isFiniteNumber(value.height) &&
+    value.height > 0
+  )
+}
+
+const isValidElement = (value: unknown): value is LabelElement => {
+  if (!isRecord(value) || !isString(value.type)) {
+    return false
   }
 
-  const rows = value
-    .filter((row): row is unknown[] => Array.isArray(row))
-    .map((row) => row.map((cell) => String(cell ?? '')))
+  if (value.type === 'text') {
+    return (
+      hasExactKeys(value, TEXT_ELEMENT_KEYS) &&
+      isCommonElementPropsValid(value) &&
+      isPositionedElementPropsValid(value) &&
+      isString(value.staticValue) &&
+      isFiniteNumber(value.fontSize) &&
+      value.fontSize > 0 &&
+      isTextAlign(value.align) &&
+      typeof value.bold === 'boolean'
+    )
+  }
 
-  return rows.length > 0 ? rows : []
+  if (value.type === 'code') {
+    return (
+      hasExactKeys(value, CODE_ELEMENT_KEYS) &&
+      isCommonElementPropsValid(value) &&
+      isPositionedElementPropsValid(value) &&
+      isString(value.staticValue) &&
+      isString(value.codeType) &&
+      CODE_TYPES.has(value.codeType) &&
+      (value.scaleMode === 'integer' || value.scaleMode === 'stretch')
+    )
+  }
+
+  if (value.type === 'image') {
+    return (
+      hasExactKeys(value, IMAGE_ELEMENT_KEYS) &&
+      isCommonElementPropsValid(value) &&
+      isPositionedElementPropsValid(value) &&
+      isString(value.staticValue)
+    )
+  }
+
+  if (value.type === 'line') {
+    return (
+      hasExactKeys(value, LINE_ELEMENT_KEYS) &&
+      isCommonElementPropsValid(value) &&
+      isFiniteNumber(value.x1) &&
+      isFiniteNumber(value.y1) &&
+      isFiniteNumber(value.x2) &&
+      isFiniteNumber(value.y2) &&
+      isFiniteNumber(value.thickness) &&
+      value.thickness > 0
+    )
+  }
+
+  return false
+}
+
+const isValidPrintSheet = (value: unknown): value is PrintSheetSettings => {
+  if (!isRecord(value) || !hasExactKeys(value, PRINT_SHEET_KEYS)) {
+    return false
+  }
+
+  return (
+    isFiniteNumber(value.pageWidthMm) &&
+    value.pageWidthMm > 0 &&
+    isFiniteNumber(value.pageHeightMm) &&
+    value.pageHeightMm > 0 &&
+    isFiniteNumber(value.marginLeftMm) &&
+    value.marginLeftMm >= 0 &&
+    isFiniteNumber(value.marginRightMm) &&
+    value.marginRightMm >= 0 &&
+    isFiniteNumber(value.marginTopMm) &&
+    value.marginTopMm >= 0 &&
+    isFiniteNumber(value.marginBottomMm) &&
+    value.marginBottomMm >= 0 &&
+    isFiniteNumber(value.gapHorizontalMm) &&
+    value.gapHorizontalMm >= 0 &&
+    isFiniteNumber(value.gapVerticalMm) &&
+    value.gapVerticalMm >= 0
+  )
+}
+
+const isValidProjectPayload = (value: unknown): value is SavedProjectPayload => {
+  if (!isRecord(value) || !hasExactKeys(value, PROJECT_PAYLOAD_KEYS)) {
+    return false
+  }
+
+  const manualLabelCount = value.manualLabelCount
+  const pdfCopies = value.pdfCopies
+
+  return (
+    isFiniteNumber(value.labelWidthMm) &&
+    value.labelWidthMm > 0 &&
+    isFiniteNumber(value.labelHeightMm) &&
+    value.labelHeightMm > 0 &&
+    isFiniteNumber(manualLabelCount) &&
+    Number.isInteger(manualLabelCount) &&
+    manualLabelCount > 0 &&
+    isFiniteNumber(pdfCopies) &&
+    Number.isInteger(pdfCopies) &&
+    pdfCopies > 0 &&
+    isValidPrintSheet(value.printSheet) &&
+    Array.isArray(value.elements) &&
+    value.elements.every((item) => isValidElement(item))
+  )
 }
 
 const mergePrintSheet = (
@@ -231,8 +445,6 @@ export const useLabelEditor = () => {
     pdf: {
       fileName: null,
       pageCount: 0,
-      pageWidthMm: null,
-      pageHeightMm: null,
       pages: [],
       copies: 1,
     },
@@ -300,10 +512,6 @@ export const useLabelEditor = () => {
 
     const normalized = coercePropValue(key, value)
     ;(element as unknown as Record<string, unknown>)[key] = normalized
-
-    if (element.type === 'line' && ['x1', 'y1', 'x2', 'y2'].includes(key)) {
-      syncLineDimensions(element)
-    }
   }
 
   const updateElement = (id: string, patch: Partial<LabelElement>): void => {
@@ -313,9 +521,6 @@ export const useLabelEditor = () => {
     }
 
     Object.assign(element as unknown as Record<string, unknown>, patch as Record<string, unknown>)
-    if (element.type === 'line') {
-      syncLineDimensions(element)
-    }
   }
 
   const getValue = (element: LabelElement, csvRow: string[] | null = null): string => {
@@ -359,8 +564,6 @@ export const useLabelEditor = () => {
   const clearPdfLabels = (): void => {
     state.pdf.fileName = null
     state.pdf.pageCount = 0
-    state.pdf.pageWidthMm = null
-    state.pdf.pageHeightMm = null
     state.pdf.pages = []
   }
 
@@ -384,8 +587,6 @@ export const useLabelEditor = () => {
 
       state.pdf.fileName = file.name
       state.pdf.pageCount = loaded.pageCount
-      state.pdf.pageWidthMm = loaded.pageWidthMm
-      state.pdf.pageHeightMm = loaded.pageHeightMm
       state.pdf.pages = loaded.pageImages
 
       if (loaded.pageWidthMm > 0 && loaded.pageHeightMm > 0) {
@@ -403,17 +604,12 @@ export const useLabelEditor = () => {
 
   const saveProject = (): void => {
     const payload = {
-      version: PROJECT_VERSION,
       labelWidthMm: state.labelWidthMm,
       labelHeightMm: state.labelHeightMm,
       manualLabelCount: state.manualLabelCount,
       printSheet: state.printSheet,
       pdfCopies: state.pdf.copies,
       elements: state.elements,
-      csv: {
-        fileName: state.csv.fileName,
-        data: state.csv.data,
-      },
     }
 
     const link = document.createElement('a')
@@ -425,56 +621,26 @@ export const useLabelEditor = () => {
   const loadProject = async (file: File): Promise<void> => {
     try {
       const text = await file.text()
-      const data = JSON.parse(text) as {
-        version?: number
-        labelWidthMm?: number
-        labelHeightMm?: number
-        manualLabelCount?: number
-        pdfCopies?: number
-        printSheet?: Partial<PrintSheetSettings>
-        elements?: Record<string, unknown>[]
-        csv?: {
-          fileName?: unknown
-          data?: unknown
-        }
+      const data = JSON.parse(text) as unknown
+      if (!isValidProjectPayload(data)) {
+        throw new Error('invalid_project_payload')
       }
 
-      if (data.version !== PROJECT_VERSION) {
-        throw new Error('unsupported_project_version')
-      }
-
-      const nextLabelWidthMm = parsePositiveFloat(data.labelWidthMm, DEFAULT_LABEL_MM.width)
-      const nextLabelHeightMm = parsePositiveFloat(data.labelHeightMm, DEFAULT_LABEL_MM.height)
-      const nextManualLabelCount = Math.floor(parsePositiveFloat(data.manualLabelCount, 1))
-      const nextPdfCopies = Math.floor(parsePositiveFloat(data.pdfCopies, 1))
-
-      state.labelWidthMm = roundMm(nextLabelWidthMm)
-      state.labelHeightMm = roundMm(nextLabelHeightMm)
-      state.manualLabelCount = Math.max(1, nextManualLabelCount)
-      state.pdf.copies = Math.max(1, nextPdfCopies)
-      state.printSheet = mergePrintSheet(DEFAULT_PRINT_SHEET_SETTINGS, data.printSheet ?? {})
-
-      if (Object.prototype.hasOwnProperty.call(data, 'csv')) {
-        const csvRows = normalizeCsvRows(data.csv?.data)
-        const csvFileName = typeof data.csv?.fileName === 'string' ? data.csv.fileName : null
-
-        state.csv.fileName = csvFileName
-        state.csv.data = csvRows ?? []
-        state.csv.headers = state.csv.data.length > 0 ? state.csv.data[0].map((item) => String(item ?? '')) : []
-      }
+      state.labelWidthMm = roundMm(data.labelWidthMm)
+      state.labelHeightMm = roundMm(data.labelHeightMm)
+      state.manualLabelCount = data.manualLabelCount
+      state.pdf.copies = data.pdfCopies
+      state.printSheet = normalizePrintSheet(data.printSheet)
+      state.csv.fileName = null
+      state.csv.data = []
+      state.csv.headers = []
 
       clearPdfLabels()
 
-      if (Array.isArray(data.elements)) {
-        const normalized = data.elements
-          .map((item) => normalizeLoadedElement(item))
-          .filter((item): item is LabelElement => item !== null)
-
-        state.elements = normalized
-        state.selectedId = state.elements[0]?.id ?? null
-      }
+      state.elements = data.elements
+      state.selectedId = state.elements[0]?.id ?? null
     } catch {
-      alert('Неподдерживаемый формат проекта. Сохраняйте и загружайте только новые проекты v2.')
+      alert('Неподдерживаемый формат проекта. Загружайте только JSON, сохраненный этой версией редактора.')
     }
   }
 

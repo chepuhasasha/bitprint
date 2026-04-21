@@ -50,9 +50,6 @@ export interface LineElement extends BaseElement {
   x2: number
   y2: number
   thickness: number
-  width: number
-  height: number
-  staticValue?: string
 }
 
 export type LabelElement =
@@ -70,8 +67,6 @@ export interface CsvState {
 export interface PdfLabelsState {
   fileName: string | null
   pageCount: number
-  pageWidthMm: number | null
-  pageHeightMm: number | null
   pages: string[]
   copies: number
 }
