@@ -6,6 +6,7 @@ import {
   DEFAULT_PRINT_SHEET_SETTINGS,
   roundMm,
 } from '../domain/constants'
+import { applyElementPatch, updateElementProperty } from '../domain/elementMutations'
 import { createDefaultElements, createElementByType } from '../domain/factories'
 import { createLabelDom } from '../domain/labelDom'
 import { loadPdfLabels as loadPdfPages } from '../domain/pdf'
@@ -13,37 +14,7 @@ import { calculatePrintGrid, getGridLabelPosition, normalizePrintSheet } from '.
 import { isValidProjectPayload } from '../domain/project'
 import type { SavedProjectPayload } from '../domain/project'
 import type { EditorState, ElementType, LabelElement, PrintSheetSettings } from '../domain/types'
-import { getElementValue, parseNumber } from '../domain/utils'
-
-const NUMERIC_PROPS = new Set([
-  'x',
-  'y',
-  'width',
-  'height',
-  'rotation',
-  'fontSize',
-  'x1',
-  'y1',
-  'x2',
-  'y2',
-  'thickness',
-])
-
-const coercePropValue = (key: string, value: unknown): unknown => {
-  if (NUMERIC_PROPS.has(key)) {
-    return parseNumber(value, 0)
-  }
-
-  if (key === 'bold') {
-    return value === true || value === 'true'
-  }
-
-  if (key === 'dataSource') {
-    return value === 'dynamic' || value === 'pdf' ? value : 'static'
-  }
-
-  return value
-}
+import { getElementValue } from '../domain/utils'
 
 const parsePositiveFloat = (value: unknown, fallback: number): number => {
   const parsed = Number(value)
@@ -166,13 +137,10 @@ export const useLabelEditor = () => {
       return
     }
 
-    const normalized = coercePropValue(key, value)
-    ;(element as unknown as Record<string, unknown>)[key] = normalized
+    updateElementProperty(element, key, value)
 
-    if (key === 'dataSource' && normalized === 'pdf') {
-      if (element.type === 'image') {
-        element.scaleMode = 'contain'
-      }
+    if (key === 'dataSource' && element.type === 'image' && element.dataSource === 'pdf') {
+      element.scaleMode = 'contain'
       applyPdfSizeToImageElement(element)
     }
   }
@@ -183,7 +151,12 @@ export const useLabelEditor = () => {
       return
     }
 
-    Object.assign(element as unknown as Record<string, unknown>, patch as Record<string, unknown>)
+    applyElementPatch(element, patch)
+
+    if (element.type === 'image' && element.dataSource === 'pdf') {
+      element.scaleMode = 'contain'
+      applyPdfSizeToImageElement(element)
+    }
   }
 
   const getPdfPageSizeMm = (): { widthMm: number; heightMm: number } | null => {

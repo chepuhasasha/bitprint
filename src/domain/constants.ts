@@ -1,7 +1,6 @@
 import type { PrintSheetSettings } from './types'
 
 export const PREVIEW_PX_PER_MM = 14
-export const PRINT_RASTER_PX_PER_MM = 16
 
 export const mmToPx = (mm: number, pxPerMm: number): number => {
   const safeMm = Number.isFinite(mm) ? mm : 0

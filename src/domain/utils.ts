@@ -103,7 +103,3 @@ export const getElementBox = (element: LabelElement): ElementBox => {
     height: Math.abs(element.y2 - element.y1) + pad * 2,
   }
 }
-
-export const clamp = (value: number, min: number, max: number): number => {
-  return Math.min(max, Math.max(min, value))
-}

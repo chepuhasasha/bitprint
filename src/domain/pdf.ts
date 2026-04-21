@@ -1,8 +1,3 @@
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
-
-GlobalWorkerOptions.workerSrc = pdfWorkerUrl
-
 const MM_PER_POINT = 25.4 / 72
 const MM_PER_INCH = 25.4
 
@@ -10,6 +5,31 @@ const TARGET_PRINTER_DPI = 1200
 const RENDER_PX_PER_MM = TARGET_PRINTER_DPI / MM_PER_INCH
 const MIN_RENDER_EDGE_PX = 280
 const MAX_RENDER_EDGE_PX = 4096
+
+type PdfRuntime = Awaited<ReturnType<typeof importPdfRuntime>>
+
+let pdfRuntimePromise: Promise<PdfRuntime> | null = null
+
+const importPdfRuntime = async () => {
+  const [pdfjsModule, workerModule] = await Promise.all([
+    import('pdfjs-dist'),
+    import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
+  ])
+
+  pdfjsModule.GlobalWorkerOptions.workerSrc = workerModule.default
+  return pdfjsModule
+}
+
+const getPdfRuntime = async (): Promise<PdfRuntime> => {
+  if (!pdfRuntimePromise) {
+    pdfRuntimePromise = importPdfRuntime().catch((error) => {
+      pdfRuntimePromise = null
+      throw error
+    })
+  }
+
+  return pdfRuntimePromise
+}
 
 const pointsToMm = (points: number): number => {
   if (!Number.isFinite(points) || points <= 0) {
@@ -48,8 +68,9 @@ export const loadPdfLabels = async (
   file: File,
   onProgress?: (processedPages: number, totalPages: number) => void,
 ): Promise<LoadedPdfLabels> => {
+  const runtime = await getPdfRuntime()
   const buffer = await file.arrayBuffer()
-  const loadingTask = getDocument({ data: buffer })
+  const loadingTask = runtime.getDocument({ data: buffer })
   const pdfDocument = await loadingTask.promise
 
   const pageImages: string[] = []

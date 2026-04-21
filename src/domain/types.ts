@@ -1,5 +1,6 @@
 export type ElementType = 'text' | 'code' | 'image' | 'line'
 export type DataSource = 'static' | 'dynamic' | 'pdf'
+export type DynamicDataSource = Exclude<DataSource, 'pdf'>
 export type TextAlign = 'left' | 'center' | 'right'
 export type BarcodeType =
   | 'gs1datamatrix'
@@ -14,12 +15,12 @@ export interface BaseElement {
   type: ElementType
 }
 
-export interface DataBoundElement extends BaseElement {
-  dataSource: DataSource
+export interface DataBoundElement<TSource extends DataSource = DataSource> extends BaseElement {
+  dataSource: TSource
   csvColumn: string
 }
 
-export interface PositionedElement extends DataBoundElement {
+export interface PositionedElement<TSource extends DataSource = DataSource> extends DataBoundElement<TSource> {
   x: number
   y: number
   width: number
@@ -27,7 +28,7 @@ export interface PositionedElement extends DataBoundElement {
   rotation: number
 }
 
-export interface TextElement extends PositionedElement {
+export interface TextElement extends PositionedElement<DynamicDataSource> {
   type: 'text'
   staticValue: string
   fontSize: number
@@ -35,7 +36,7 @@ export interface TextElement extends PositionedElement {
   bold: boolean
 }
 
-export interface CodeElement extends PositionedElement {
+export interface CodeElement extends PositionedElement<DynamicDataSource> {
   type: 'code'
   staticValue: string
   codeType: BarcodeType

@@ -109,6 +109,10 @@ const isDataSource = (value: unknown): value is 'static' | 'dynamic' | 'pdf' => 
   return value === 'static' || value === 'dynamic' || value === 'pdf'
 }
 
+const isDynamicDataSource = (value: unknown): value is 'static' | 'dynamic' => {
+  return value === 'static' || value === 'dynamic'
+}
+
 const isTextAlign = (value: unknown): value is 'left' | 'center' | 'right' => {
   return value === 'left' || value === 'center' || value === 'right'
 }
@@ -121,8 +125,11 @@ const isBaseElementPropsValid = (value: Record<string, unknown>): boolean => {
   return isNonEmptyString(value.id)
 }
 
-const isCommonElementPropsValid = (value: Record<string, unknown>): boolean => {
-  return isBaseElementPropsValid(value) && isDataSource(value.dataSource) && isString(value.csvColumn)
+const isCommonElementPropsValid = (
+  value: Record<string, unknown>,
+  sourceValidator: (source: unknown) => boolean,
+): boolean => {
+  return isBaseElementPropsValid(value) && sourceValidator(value.dataSource) && isString(value.csvColumn)
 }
 
 const isPositionedElementPropsValid = (value: Record<string, unknown>): boolean => {
@@ -145,7 +152,7 @@ const isValidElement = (value: unknown): value is LabelElement => {
   if (value.type === 'text') {
     return (
       hasExactKeys(value, TEXT_ELEMENT_KEYS) &&
-      isCommonElementPropsValid(value) &&
+      isCommonElementPropsValid(value, isDynamicDataSource) &&
       isPositionedElementPropsValid(value) &&
       isString(value.staticValue) &&
       isFiniteNumber(value.fontSize) &&
@@ -158,7 +165,7 @@ const isValidElement = (value: unknown): value is LabelElement => {
   if (value.type === 'code') {
     return (
       hasExactKeys(value, CODE_ELEMENT_KEYS) &&
-      isCommonElementPropsValid(value) &&
+      isCommonElementPropsValid(value, isDynamicDataSource) &&
       isPositionedElementPropsValid(value) &&
       isString(value.staticValue) &&
       isString(value.codeType) &&
@@ -170,7 +177,7 @@ const isValidElement = (value: unknown): value is LabelElement => {
   if (value.type === 'image') {
     return (
       hasExactKeys(value, IMAGE_ELEMENT_KEYS) &&
-      isCommonElementPropsValid(value) &&
+      isCommonElementPropsValid(value, isDataSource) &&
       isPositionedElementPropsValid(value) &&
       isString(value.staticValue) &&
       isImageScaleMode(value.scaleMode)

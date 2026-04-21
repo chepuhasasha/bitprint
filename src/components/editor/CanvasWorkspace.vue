@@ -380,6 +380,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  stopDrag()
   window.removeEventListener('resize', measureWorkspace)
   workspaceResizeObserver?.disconnect()
   workspaceResizeObserver = null
