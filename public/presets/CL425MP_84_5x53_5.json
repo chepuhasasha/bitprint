@@ -1,16 +1,16 @@
 {
-  "labelWidthMm": 15,
-  "labelHeightMm": 15,
+  "labelWidthMm": 84.5,
+  "labelHeightMm": 53.5,
   "manualLabelCount": 1,
   "printSheet": {
     "pageWidthMm": 210,
     "pageHeightMm": 297,
-    "marginLeftMm": 10,
-    "marginRightMm": 10,
-    "marginTopMm": 9,
-    "marginBottomMm": 10.05,
-    "gapHorizontalMm": 2.5,
-    "gapVerticalMm": 2.53
+    "marginLeftMm": 16,
+    "marginRightMm": 16,
+    "marginTopMm": 8,
+    "marginBottomMm": 11.1,
+    "gapHorizontalMm": 9,
+    "gapVerticalMm": 2.6
   },
   "pdfCopies": 1,
   "elements": [
@@ -21,8 +21,8 @@
       "csvColumn": "0",
       "x1": 0,
       "y1": 0,
-      "x2": 15,
-      "y2": 15,
+      "x2": 84.5,
+      "y2": 53.5,
       "thickness": 0.3
     },
     {
@@ -30,10 +30,10 @@
       "type": "line",
       "dataSource": "static",
       "csvColumn": "0",
-      "x1": 15,
+      "x1": 84.5,
       "y1": 0,
       "x2": 0,
-      "y2": 15,
+      "y2": 53.5,
       "thickness": 0.3
     }
   ]

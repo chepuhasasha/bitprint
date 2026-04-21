@@ -8,9 +8,9 @@
     "marginLeftMm": 10,
     "marginRightMm": 10,
     "marginTopMm": 9,
-    "marginBottomMm": 10.05,
+    "marginBottomMm": 10.5,
     "gapHorizontalMm": 2.5,
-    "gapVerticalMm": 2.53
+    "gapVerticalMm": 2.5
   },
   "pdfCopies": 1,
   "elements": [
