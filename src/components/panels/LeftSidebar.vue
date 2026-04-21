@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 import LayersList from './LayersList.vue'
 import type { PrintGrid } from '../../domain/print'
 import type { LabelElement, PrintSheetSettings } from '../../domain/types'
@@ -16,6 +18,8 @@ defineProps<{
   printSheet: PrintSheetSettings
   printGrid: PrintGrid
 }>()
+
+const pdfInputRef = ref<HTMLInputElement | null>(null)
 
 const emit = defineEmits<{
   (event: 'load-csv', payload: File): void
@@ -46,7 +50,13 @@ const onPdfSelected = (event: Event): void => {
   }
 
   emit('load-pdf', file)
-  target.value = ''
+}
+
+const onClearPdf = (): void => {
+  emit('clear-pdf')
+  if (pdfInputRef.value) {
+    pdfInputRef.value.value = ''
+  }
 }
 
 const onPrintNumberChange = (key: keyof PrintSheetSettings, event: Event): void => {
@@ -76,13 +86,13 @@ aside.left-sidebar
     input(type='number' min='1' step='1' :value='manualLabelCount' @change='onManualCountChange')
 
   h2.panel-title PDF этикетки
-  input.csv-input(type='file' accept='.pdf,application/pdf' :disabled='pdfLoading' @change='onPdfSelected')
+  input.csv-input(ref='pdfInputRef' type='file' accept='.pdf,application/pdf' :disabled='pdfLoading' @change='onPdfSelected')
   p.pdf-loading(v-if='pdfLoading') {{ pdfLoadingText || 'Загрузка PDF...' }}
   p.pdf-meta(v-else-if='pdfFileName') {{ pdfFileName }} ({{ pdfPageCount }} стр.)
   label.manual-count(v-if='pdfFileName || pdfLoading')
     span Копий каждой этикетки
     input(type='number' min='1' step='1' :value='pdfCopies' :disabled='pdfLoading' @change='onPdfCopiesChange')
-  button.pdf-clear-btn(v-if='pdfFileName' :disabled='pdfLoading' @click='emit("clear-pdf")') Отключить PDF режим
+  button.pdf-clear-btn(v-if='pdfFileName' :disabled='pdfLoading' @click='onClearPdf') Отключить PDF режим
 
   h2.panel-title Параметры A4 (мм)
   .print-sheet-settings
