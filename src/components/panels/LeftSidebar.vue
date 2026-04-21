@@ -7,9 +7,10 @@ import type { LabelElement, PrintSheetSettings } from '../../domain/types'
 
 interface PresetListEntry {
   name: string
+  code: string
+  url: string
   file: string
-  minSheetPrice: number | null
-  maxSheetPrice: number | null
+  labelsPerSheet: number | null
 }
 
 const props = defineProps<{
@@ -103,25 +104,23 @@ const filteredPresets = computed(() => {
 
   return props.presets.filter((preset) => {
     const name = preset.name.toLowerCase()
-    return name.includes(query)
+    const code = preset.code.toLowerCase()
+    return name.includes(query) || code.includes(query)
   })
 })
 
-const priceFormatter = new Intl.NumberFormat('ru-RU')
+const labelsFormatter = new Intl.NumberFormat('ru-RU', {
+  maximumFractionDigits: 2,
+})
 
-const formatPriceRange = (preset: PresetListEntry): string => {
-  const min = preset.minSheetPrice
-  const max = preset.maxSheetPrice
+const formatLabelsPerSheet = (preset: PresetListEntry): string => {
+  const count = preset.labelsPerSheet
 
-  if (min == null || max == null) {
-    return '₩— / лист'
+  if (count == null || !Number.isFinite(count) || count <= 0) {
+    return '— шт./лист'
   }
 
-  if (min === max) {
-    return `₩${priceFormatter.format(min)} / лист`
-  }
-
-  return `₩${priceFormatter.format(min)}–₩${priceFormatter.format(max)} / лист`
+  return `${labelsFormatter.format(count)} шт./лист`
 }
 
 const onOpenPresetsModal = (): void => {
@@ -235,7 +234,7 @@ aside.left-sidebar
         input.presets-search-input(
           v-model='presetSearch'
           type='search'
-          placeholder='Поиск по названию'
+          placeholder='Поиск по названию или коду'
           autocomplete='off'
         )
 
@@ -248,7 +247,15 @@ aside.left-sidebar
         li.presets-item(v-for='preset in filteredPresets' :key='preset.file')
           button.presets-item-btn(type='button' :disabled='presetApplying' @click='onApplyPreset(preset.file)')
             span.presets-item-name {{ preset.name }}
-            span.presets-item-price {{ formatPriceRange(preset) }}
+            span.presets-item-meta {{ formatLabelsPerSheet(preset) }}
+          a.presets-item-code-link(
+            v-if='preset.code && preset.url'
+            :href='preset.url'
+            target='_blank'
+            rel='noopener noreferrer'
+            :title='`Открыть товар ${preset.code}`'
+          ) {{ preset.code }}
+          span.presets-item-code(v-else-if='preset.code') {{ preset.code }}
 </template>
 
 <style scoped lang="scss">
@@ -512,7 +519,7 @@ aside.left-sidebar
 .presets-list {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.3rem;
   list-style: none;
   margin: 0;
   overflow: auto;
@@ -520,6 +527,9 @@ aside.left-sidebar
 }
 
 .presets-item {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
   margin: 0;
 }
 
@@ -527,14 +537,17 @@ aside.left-sidebar
   align-items: flex-start;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 0.45rem;
+  border-radius: 0.45rem 0 0 0.45rem;
+  border-right: 0;
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: 0.18rem;
+  min-width: 0;
   padding: 0.5rem 0.6rem;
   text-align: left;
-  width: 100%;
+  width: auto;
 }
 
 .presets-item-btn:hover {
@@ -552,10 +565,41 @@ aside.left-sidebar
   font-weight: 700;
 }
 
-.presets-item-price {
+.presets-item-meta {
   color: #64748b;
   font-size: 0.69rem;
   font-weight: 700;
+}
+
+.presets-item-code,
+.presets-item-code-link {
+  align-items: center;
+  border: 1px solid #e2e8f0;
+  border-radius: 0 0.45rem 0.45rem 0;
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 700;
+  justify-content: center;
+  line-height: 1.2;
+  min-width: 5.8rem;
+  padding: 0.16rem 0.45rem;
+  white-space: nowrap;
+}
+
+.presets-item-code {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.presets-item-code-link {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+
+.presets-item-code-link:hover {
+  background: #bfdbfe;
 }
 
 @media (max-width: 960px) {

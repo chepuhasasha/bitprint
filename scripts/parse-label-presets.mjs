@@ -269,6 +269,50 @@ const parseQtyOptions = (selectionHtml) => {
   return [...deduped.values()].sort((left, right) => left.sheets - right.sheets)
 }
 
+const toPositiveNumber = (value) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+const deriveLabelsPerSheet = (prices, fallbackValue) => {
+  const fallback = toPositiveNumber(fallbackValue)
+  if (fallback !== null) {
+    return fallback
+  }
+
+  const ratioCounts = new Map()
+
+  for (const item of prices) {
+    const labels = toPositiveNumber(item?.labels)
+    const sheets = toPositiveNumber(item?.sheets)
+    if (labels === null || sheets === null) {
+      continue
+    }
+
+    const ratio = Math.round((labels / sheets) * 10_000) / 10_000
+    if (!Number.isFinite(ratio) || ratio <= 0) {
+      continue
+    }
+
+    const key = String(ratio)
+    const current = ratioCounts.get(key)
+    if (current) {
+      current.count += 1
+    } else {
+      ratioCounts.set(key, { value: ratio, count: 1 })
+    }
+  }
+
+  let selected = null
+  for (const candidate of ratioCounts.values()) {
+    if (!selected || candidate.count > selected.count) {
+      selected = candidate
+    }
+  }
+
+  return selected ? selected.value : null
+}
+
 const formatDimension = (value) => {
   if (!Number.isFinite(value)) {
     return '0'
@@ -468,6 +512,7 @@ const main = async () => {
           code: normalizedGoodsCode,
           url: product.url,
           file: fileName,
+          labelsPerSheet: deriveLabelsPerSheet(prices, detail.labelsPerSheet),
           prices,
         },
         fileName,

@@ -10,9 +10,10 @@ import { useLabelEditor } from './composables/useLabelEditor'
 
 interface PresetIndexEntry {
   name: string
+  code: string
+  url: string
   file: string
-  minSheetPrice: number | null
-  maxSheetPrice: number | null
+  labelsPerSheet: number | null
 }
 
 const editor = useLabelEditor()
@@ -107,6 +108,53 @@ const toPositiveNumber = (value: unknown): number | null => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
 }
 
+const deriveLabelsPerSheet = (item: Record<string, unknown>): number | null => {
+  const explicit = toPositiveNumber(item.labelsPerSheet)
+  if (explicit !== null) {
+    return explicit
+  }
+
+  if (!Array.isArray(item.prices)) {
+    return null
+  }
+
+  const ratioCounts = new Map<string, { value: number; count: number }>()
+
+  for (const entry of item.prices) {
+    if (!isRecord(entry)) {
+      continue
+    }
+
+    const labels = toPositiveNumber(entry.labels)
+    const sheets = toPositiveNumber(entry.sheets)
+    if (labels === null || sheets === null) {
+      continue
+    }
+
+    const ratio = Math.round((labels / sheets) * 10_000) / 10_000
+    if (!Number.isFinite(ratio) || ratio <= 0) {
+      continue
+    }
+
+    const key = String(ratio)
+    const current = ratioCounts.get(key)
+    if (current) {
+      current.count += 1
+    } else {
+      ratioCounts.set(key, { value: ratio, count: 1 })
+    }
+  }
+
+  let selected: { value: number; count: number } | null = null
+  for (const candidate of ratioCounts.values()) {
+    if (!selected || candidate.count > selected.count) {
+      selected = candidate
+    }
+  }
+
+  return selected ? selected.value : null
+}
+
 const loadPresetsIndex = async (): Promise<void> => {
   presetsLoading.value = true
   presetsError.value = ''
@@ -125,20 +173,12 @@ const loadPresetsIndex = async (): Promise<void> => {
     const nextPresets = data
       .filter((item): item is Record<string, unknown> => isRecord(item))
       .map((item) => {
-        const prices = Array.isArray(item.prices)
-          ? item.prices
-              .filter((entry): entry is Record<string, unknown> => isRecord(entry))
-              .map((entry) => toPositiveNumber(entry.price_per_sheet))
-              .filter((price): price is number => price !== null)
-          : []
-        const minSheetPrice = prices.length > 0 ? Math.min(...prices) : null
-        const maxSheetPrice = prices.length > 0 ? Math.max(...prices) : null
-
         return {
           name: String(item.name ?? '').trim(),
+          code: String(item.code ?? '').trim(),
+          url: String(item.url ?? '').trim(),
           file: String(item.file ?? '').trim(),
-          minSheetPrice,
-          maxSheetPrice,
+          labelsPerSheet: deriveLabelsPerSheet(item),
         }
       })
       .filter((item) => item.name.length > 0 && item.file.length > 0)
