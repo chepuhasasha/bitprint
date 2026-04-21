@@ -19,9 +19,11 @@ interface ResizeDrag {
   id: string
   startClientX: number
   startClientY: number
-  initialWidth: number
-  initialHeight: number
   rotation: number
+  anchorWorldX: number
+  anchorWorldY: number
+  handleWorldX: number
+  handleWorldY: number
 }
 
 interface LinePointDrag {
@@ -174,6 +176,17 @@ const rotatePoint = (
   return {
     x: centerX + dx * cos - dy * sin,
     y: centerY + dx * sin + dy * cos,
+  }
+}
+
+const rotateVector = (x: number, y: number, angleDeg: number): { x: number; y: number } => {
+  const angleRad = (angleDeg * Math.PI) / 180
+  const cos = Math.cos(angleRad)
+  const sin = Math.sin(angleRad)
+
+  return {
+    x: x * cos - y * sin,
+    y: x * sin + y * cos,
   }
 }
 
@@ -508,13 +521,26 @@ const onMouseMove = (event: MouseEvent): void => {
   }
 
   if (current.mode === 'resize') {
-    const localDelta = projectDeltaToElementLocalSpace(dxMm, dyMm, current.rotation)
-    const nextWidth = Math.max(0.1, roundMm(current.initialWidth + localDelta.dx))
-    const nextHeight = Math.max(0.1, roundMm(current.initialHeight + localDelta.dy))
+    const pointerWorldX = current.handleWorldX + dxMm
+    const pointerWorldY = current.handleWorldY + dyMm
+    const localVector = projectDeltaToElementLocalSpace(
+      pointerWorldX - current.anchorWorldX,
+      pointerWorldY - current.anchorWorldY,
+      current.rotation,
+    )
+    const nextWidth = Math.max(0.1, roundMm(localVector.dx))
+    const nextHeight = Math.max(0.1, roundMm(localVector.dy))
+    const centerOffset = rotateVector(nextWidth / 2, nextHeight / 2, current.rotation)
+    const nextCenterX = current.anchorWorldX + centerOffset.x
+    const nextCenterY = current.anchorWorldY + centerOffset.y
+    const nextX = roundMm(nextCenterX - nextWidth / 2)
+    const nextY = roundMm(nextCenterY - nextHeight / 2)
 
     emit('patch-element', {
       id: current.id,
       patch: {
+        x: nextX,
+        y: nextY,
         width: nextWidth,
         height: nextHeight,
       } as Partial<LabelElement>,
@@ -582,9 +608,27 @@ const onResizeHandleMouseDown = (event: MouseEvent): void => {
       id: selectedElement.value.id,
       startClientX: event.clientX,
       startClientY: event.clientY,
-      initialWidth: selectedElement.value.width,
-      initialHeight: selectedElement.value.height,
       rotation: getRotation(selectedElement.value.rotation),
+      anchorWorldX: getRotatedPointForElement(
+        selectedElement.value,
+        selectedElement.value.x,
+        selectedElement.value.y,
+      ).x,
+      anchorWorldY: getRotatedPointForElement(
+        selectedElement.value,
+        selectedElement.value.x,
+        selectedElement.value.y,
+      ).y,
+      handleWorldX: getRotatedPointForElement(
+        selectedElement.value,
+        selectedElement.value.x + selectedElement.value.width,
+        selectedElement.value.y + selectedElement.value.height,
+      ).x,
+      handleWorldY: getRotatedPointForElement(
+        selectedElement.value,
+        selectedElement.value.x + selectedElement.value.width,
+        selectedElement.value.y + selectedElement.value.height,
+      ).y,
     },
     event,
   )
@@ -775,19 +819,19 @@ section.workspace#editor-workspace(ref='workspaceRef')
 }
 
 .ctrl-handle {
-  background: #fff;
-  border: 0.5px solid #0055ff;
+  background: #0055ff;
+  border: 0;
   border-radius: 50%;
-  height: 6px;
+  height: 10px;
   pointer-events: auto;
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 6px;
+  width: 10px;
   z-index: 20;
 }
 
 .ctrl-handle:hover {
-  background: #0055ff;
+  background: #0049d1;
 }
 
 .resize-handle {
@@ -799,10 +843,8 @@ section.workspace#editor-workspace(ref='workspaceRef')
 }
 
 .rotate-handle {
-  border-color: #ea580c;
+  background: #ea580c;
   cursor: grab;
-  height: 8px;
-  width: 8px;
 }
 
 .rotate-handle:active {
@@ -810,7 +852,7 @@ section.workspace#editor-workspace(ref='workspaceRef')
 }
 
 .rotate-handle:hover {
-  background: #ea580c;
+  background: #c2410c;
 }
 
 .canvas-size-indicator {
