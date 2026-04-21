@@ -618,29 +618,40 @@ export const useLabelEditor = () => {
     link.click()
   }
 
-  const loadProject = async (file: File): Promise<void> => {
+  const applyProjectPayload = (data: SavedProjectPayload): void => {
+    state.labelWidthMm = roundMm(data.labelWidthMm)
+    state.labelHeightMm = roundMm(data.labelHeightMm)
+    state.manualLabelCount = data.manualLabelCount
+    state.pdf.copies = data.pdfCopies
+    state.printSheet = normalizePrintSheet(data.printSheet)
+    state.csv.fileName = null
+    state.csv.data = []
+    state.csv.headers = []
+
+    clearPdfLabels()
+
+    state.elements = data.elements
+    state.selectedId = state.elements[0]?.id ?? null
+  }
+
+  const loadProjectPayload = (payload: unknown): boolean => {
+    if (!isValidProjectPayload(payload)) {
+      alert('Неподдерживаемый формат проекта. Загружайте только JSON, сохраненный этой версией редактора.')
+      return false
+    }
+
+    applyProjectPayload(payload)
+    return true
+  }
+
+  const loadProject = async (file: File): Promise<boolean> => {
     try {
       const text = await file.text()
       const data = JSON.parse(text) as unknown
-      if (!isValidProjectPayload(data)) {
-        throw new Error('invalid_project_payload')
-      }
-
-      state.labelWidthMm = roundMm(data.labelWidthMm)
-      state.labelHeightMm = roundMm(data.labelHeightMm)
-      state.manualLabelCount = data.manualLabelCount
-      state.pdf.copies = data.pdfCopies
-      state.printSheet = normalizePrintSheet(data.printSheet)
-      state.csv.fileName = null
-      state.csv.data = []
-      state.csv.headers = []
-
-      clearPdfLabels()
-
-      state.elements = data.elements
-      state.selectedId = state.elements[0]?.id ?? null
+      return loadProjectPayload(data)
     } catch {
       alert('Неподдерживаемый формат проекта. Загружайте только JSON, сохраненный этой версией редактора.')
+      return false
     }
   }
 
@@ -766,6 +777,7 @@ export const useLabelEditor = () => {
     loadPdfLabels,
     clearPdfLabels,
     saveProject,
+    loadProjectPayload,
     loadProject,
     executeBatchPrint,
   }

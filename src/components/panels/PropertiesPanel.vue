@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
+
 import { CODE_TYPE_OPTIONS, TEXT_ALIGN_OPTIONS } from '../../domain/constants'
 import type { LabelElement } from '../../domain/types'
 
 const props = defineProps<{
   selectedElement: LabelElement | null
   csvHeaders: string[]
+  resetToken: number
 }>()
 
 const emit = defineEmits<{
@@ -26,6 +29,8 @@ const scaleOptions = [
   { value: 'integer', label: 'Точное' },
   { value: 'stretch', label: 'Растянуть' },
 ] as const
+
+const imageInputRef = ref<HTMLInputElement | null>(null)
 
 const getEventValue = (event: Event): string => {
   const target = event.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | null
@@ -54,6 +59,15 @@ const onNumberUpdate = (key: string, event: Event): void => {
 const onStringUpdate = (key: string, event: Event): void => {
   update(key, getEventValue(event))
 }
+
+watch(
+  () => props.resetToken,
+  () => {
+    if (imageInputRef.value) {
+      imageInputRef.value.value = ''
+    }
+  },
+)
 </script>
 
 <template lang="pug">
@@ -83,7 +97,7 @@ aside.properties
 
     .block(v-else-if='selectedElement.type === "image"')
       h3 Изображение
-      input(type='file' accept='image/*' @change='onImageChange')
+      input(ref='imageInputRef' type='file' accept='image/*' @change='onImageChange')
 
     .block(v-else)
       h3 Источник данных

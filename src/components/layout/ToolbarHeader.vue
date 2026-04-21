@@ -8,6 +8,7 @@ const props = defineProps<{
   labelHeightMm: number
   printInProgress: boolean
   printLabel: string
+  resetToken: number
 }>()
 
 const emit = defineEmits<{
@@ -34,6 +35,15 @@ watch(
     heightMmInput.value = nextHeight
   },
   { immediate: true },
+)
+
+watch(
+  () => props.resetToken,
+  () => {
+    if (projectInputRef.value) {
+      projectInputRef.value.value = ''
+    }
+  },
 )
 
 const applyLabelSize = (): void => {

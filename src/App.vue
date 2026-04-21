@@ -8,8 +8,18 @@ import PropertiesPanel from './components/panels/PropertiesPanel.vue'
 import type { LabelElement } from './domain/types'
 import { useLabelEditor } from './composables/useLabelEditor'
 
+interface PresetIndexEntry {
+  name: string
+  file: string
+}
+
 const editor = useLabelEditor()
 const printContainerRef = ref<HTMLDivElement | null>(null)
+const presets = ref<PresetIndexEntry[]>([])
+const presetsLoading = ref(false)
+const presetsError = ref('')
+const presetApplying = ref(false)
+const resetToken = ref(0)
 
 const printLabel = computed(() => {
   if (editor.pdfLoading.value) {
@@ -29,6 +39,7 @@ const printLabel = computed(() => {
 
 onMounted(() => {
   editor.initDefaults()
+  void loadPresetsIndex()
 })
 
 watch(
@@ -59,7 +70,10 @@ const onLoadPdf = async (file: File): Promise<void> => {
 }
 
 const onLoadProject = async (file: File): Promise<void> => {
-  await editor.loadProject(file)
+  const loaded = await editor.loadProject(file)
+  if (loaded) {
+    resetToken.value += 1
+  }
 }
 
 const onLoadImage = async (file: File): Promise<void> => {
@@ -81,6 +95,67 @@ const onPrint = async (): Promise<void> => {
 
   await editor.executeBatchPrint(printContainerRef.value)
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+const loadPresetsIndex = async (): Promise<void> => {
+  presetsLoading.value = true
+  presetsError.value = ''
+
+  try {
+    const response = await fetch('/presets/index.json', { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error(`presets_index_http_${response.status}`)
+    }
+
+    const data = (await response.json()) as unknown
+    if (!Array.isArray(data)) {
+      throw new Error('presets_index_invalid')
+    }
+
+    const nextPresets = data
+      .filter((item): item is Record<string, unknown> => isRecord(item))
+      .map((item) => ({
+        name: String(item.name ?? '').trim(),
+        file: String(item.file ?? '').trim(),
+      }))
+      .filter((item) => item.name.length > 0 && item.file.length > 0)
+
+    presets.value = nextPresets
+  } catch {
+    presets.value = []
+    presetsError.value = 'Не удалось загрузить список пресетов.'
+  } finally {
+    presetsLoading.value = false
+  }
+}
+
+const onApplyPreset = async (fileName: string): Promise<void> => {
+  if (!fileName || presetApplying.value) {
+    return
+  }
+
+  presetApplying.value = true
+
+  try {
+    const response = await fetch(`/presets/${encodeURIComponent(fileName)}`, { cache: 'no-store' })
+    if (!response.ok) {
+      throw new Error(`preset_http_${response.status}`)
+    }
+
+    const payload = (await response.json()) as unknown
+    const applied = editor.loadProjectPayload(payload)
+    if (applied) {
+      resetToken.value += 1
+    }
+  } catch {
+    alert('Не удалось загрузить пресет. Проверьте, что файл доступен в public/presets.')
+  } finally {
+    presetApplying.value = false
+  }
+}
 </script>
 
 <template lang="pug">
@@ -90,6 +165,7 @@ const onPrint = async (): Promise<void> => {
     :label-height-mm='editor.state.labelHeightMm'
     :print-in-progress='editor.printInProgress.value || editor.pdfLoading.value'
     :print-label='printLabel'
+    :reset-token='resetToken'
     @update-label-size='editor.setLabelSizeMm($event.widthMm, $event.heightMm)'
     @add-element='editor.addElement'
     @save-project='editor.saveProject()'
@@ -110,10 +186,17 @@ const onPrint = async (): Promise<void> => {
       :pdf-loading-text='editor.pdfLoadingText.value'
       :print-sheet='editor.state.printSheet'
       :print-grid='editor.printGrid.value'
+      :presets='presets'
+      :presets-loading='presetsLoading'
+      :presets-error='presetsError'
+      :preset-applying='presetApplying'
+      :reset-token='resetToken'
       @load-csv='onLoadCsv'
       @load-pdf='onLoadPdf'
       @clear-pdf='onClearPdf'
       @update-pdf-copies='onPdfCopiesChange'
+      @reload-presets='loadPresetsIndex'
+      @apply-preset='onApplyPreset'
       @select-layer='editor.selectElement'
       @delete-layer='editor.deleteElement'
       @update-print-sheet='editor.updatePrintSheet'
@@ -134,6 +217,7 @@ const onPrint = async (): Promise<void> => {
     PropertiesPanel(
       :selected-element='editor.selectedElement.value'
       :csv-headers='editor.state.csv.headers'
+      :reset-token='resetToken'
       @update-prop='editor.updateSelectedProp'
       @load-image='onLoadImage'
     )
