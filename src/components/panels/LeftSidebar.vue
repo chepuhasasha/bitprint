@@ -20,7 +20,6 @@ const props = defineProps<{
   hasCsv: boolean
   pdfFileName: string | null
   pdfPageCount: number
-  pdfCopies: number
   pdfLoading: boolean
   pdfLoadingText: string
   printSheet: PrintSheetSettings
@@ -39,7 +38,6 @@ const emit = defineEmits<{
   (event: 'load-csv', payload: File): void
   (event: 'load-pdf', payload: File): void
   (event: 'clear-pdf'): void
-  (event: 'update-pdf-copies', payload: number): void
   (event: 'select-layer', payload: string): void
   (event: 'delete-layer', payload: string): void
   (event: 'update-print-sheet', payload: Partial<PrintSheetSettings>): void
@@ -87,10 +85,9 @@ const onManualCountChange = (event: Event): void => {
   emit('update-manual-label-count', Number(target.value))
 }
 
-const onPdfCopiesChange = (event: Event): void => {
-  const target = event.target as HTMLInputElement
-  emit('update-pdf-copies', Number(target.value))
-}
+const hasPdfFile = computed(() => Boolean(props.pdfFileName))
+const showCountInput = computed(() => (!props.hasCsv && !hasPdfFile.value) || (hasPdfFile.value && props.pdfPageCount <= 1))
+const countLabel = computed(() => (!props.hasCsv && !hasPdfFile.value ? 'Количество' : 'Копий'))
 
 const presetsModalOpen = ref(false)
 const presetSearch = ref('')
@@ -162,17 +159,14 @@ watch(
 aside.left-sidebar
   h2.panel-title База данных (CSV)
   input.csv-input(ref='csvInputRef' type='file' accept='.csv,.txt' @change='onCsvSelected')
-  label.manual-count(v-if='!hasCsv')
-    span Кол-во без CSV
-    input(type='number' min='1' step='1' :value='manualLabelCount' @change='onManualCountChange')
 
   h2.panel-title PDF этикетки
   input.csv-input(ref='pdfInputRef' type='file' accept='.pdf,application/pdf' :disabled='pdfLoading' @change='onPdfSelected')
   p.pdf-loading(v-if='pdfLoading') {{ pdfLoadingText || 'Загрузка PDF...' }}
   p.pdf-meta(v-else-if='pdfFileName') {{ pdfFileName }} ({{ pdfPageCount }} стр.)
-  label.manual-count(v-if='pdfFileName || pdfLoading')
-    span Копий каждой этикетки
-    input(type='number' min='1' step='1' :value='pdfCopies' :disabled='pdfLoading' @change='onPdfCopiesChange')
+  label.manual-count(v-if='showCountInput')
+    span {{ countLabel }}
+    input(type='number' min='1' step='1' :value='manualLabelCount' :disabled='pdfLoading' @change='onManualCountChange')
   button.pdf-clear-btn(v-if='pdfFileName' :disabled='pdfLoading' @click='onClearPdf') Отключить PDF режим
 
   .section-header

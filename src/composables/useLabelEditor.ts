@@ -36,7 +36,7 @@ const coercePropValue = (key: string, value: unknown): unknown => {
   }
 
   if (key === 'dataSource') {
-    return value === 'dynamic' ? 'dynamic' : 'static'
+    return value === 'dynamic' || value === 'pdf' ? value : 'static'
   }
 
   return value
@@ -157,8 +157,8 @@ const isNonEmptyString = (value: unknown): value is string => {
   return isString(value) && value.length > 0
 }
 
-const isDataSource = (value: unknown): value is 'static' | 'dynamic' => {
-  return value === 'static' || value === 'dynamic'
+const isDataSource = (value: unknown): value is 'static' | 'dynamic' | 'pdf' => {
+  return value === 'static' || value === 'dynamic' || value === 'pdf'
 }
 
 const isTextAlign = (value: unknown): value is 'left' | 'center' | 'right' => {
@@ -342,18 +342,6 @@ const createImageNode = (element: Extract<LabelElement, { type: 'image' }>, valu
   return node
 }
 
-const createPdfLabelNode = (source: string): HTMLElement => {
-  const node = document.createElement('img')
-  node.style.width = '100%'
-  node.style.height = '100%'
-  node.style.objectFit = 'contain'
-  node.style.display = 'block'
-  node.style.background = '#fff'
-  node.draggable = false
-  node.src = source
-  return node
-}
-
 const createLineNode = (element: Extract<LabelElement, { type: 'line' }>): HTMLElement => {
   const node = document.createElement('div')
   const dx = element.x2 - element.x1
@@ -445,6 +433,8 @@ export const useLabelEditor = () => {
     pdf: {
       fileName: null,
       pageCount: 0,
+      pageWidthMm: 0,
+      pageHeightMm: 0,
       pages: [],
       copies: 1,
     },
@@ -482,11 +472,6 @@ export const useLabelEditor = () => {
     state.manualLabelCount = Math.max(1, normalized)
   }
 
-  const setPdfCopies = (count: unknown): void => {
-    const normalized = Math.floor(parsePositiveFloat(count, state.pdf.copies))
-    state.pdf.copies = Math.max(1, normalized)
-  }
-
   const addElement = (type: ElementType): void => {
     const element = createElementByType(type)
     state.elements.push(element)
@@ -512,6 +497,10 @@ export const useLabelEditor = () => {
 
     const normalized = coercePropValue(key, value)
     ;(element as unknown as Record<string, unknown>)[key] = normalized
+
+    if (key === 'dataSource' && normalized === 'pdf') {
+      applyPdfSizeToImageElement(element)
+    }
   }
 
   const updateElement = (id: string, patch: Partial<LabelElement>): void => {
@@ -523,7 +512,81 @@ export const useLabelEditor = () => {
     Object.assign(element as unknown as Record<string, unknown>, patch as Record<string, unknown>)
   }
 
-  const getValue = (element: LabelElement, csvRow: string[] | null = null): string => {
+  const getPdfPageSizeMm = (): { widthMm: number; heightMm: number } | null => {
+    if (state.pdf.pageWidthMm <= 0 || state.pdf.pageHeightMm <= 0) {
+      return null
+    }
+
+    return {
+      widthMm: Math.max(0.1, roundMm(state.pdf.pageWidthMm)),
+      heightMm: Math.max(0.1, roundMm(state.pdf.pageHeightMm)),
+    }
+  }
+
+  const applyPdfSizeToImageElement = (element: LabelElement): void => {
+    if (element.type !== 'image' || element.dataSource !== 'pdf') {
+      return
+    }
+
+    const pdfSize = getPdfPageSizeMm()
+    if (!pdfSize) {
+      return
+    }
+
+    element.width = pdfSize.widthMm
+    element.height = pdfSize.heightMm
+  }
+
+  const getCsvRows = (): string[][] => {
+    return state.csv.data.length > 1 ? state.csv.data.slice(1) : []
+  }
+
+  const getBaseLabelCount = (hasCsvFile: boolean, csvRowsCount: number, pdfPagesCount: number): number => {
+    if (hasCsvFile && pdfPagesCount > 0) {
+      return Math.max(csvRowsCount, pdfPagesCount)
+    }
+
+    if (hasCsvFile) {
+      return csvRowsCount
+    }
+
+    if (pdfPagesCount > 0) {
+      return pdfPagesCount
+    }
+
+    return Math.max(1, Math.floor(state.manualLabelCount))
+  }
+
+  const getCycledIndex = (index: number, size: number): number => {
+    if (size <= 0) {
+      return 0
+    }
+
+    return index % size
+  }
+
+  const getCsvRowByRenderIndex = (renderIndex: number, rows: string[][]): string[] | null => {
+    if (rows.length <= 0) {
+      return null
+    }
+
+    return rows[getCycledIndex(renderIndex, rows.length)] ?? null
+  }
+
+  const getPdfPageByRenderIndex = (renderIndex: number): string => {
+    const pages = state.pdf.pages
+    if (pages.length <= 0) {
+      return ''
+    }
+
+    return pages[getCycledIndex(renderIndex, pages.length)] ?? ''
+  }
+
+  const getValue = (element: LabelElement, csvRow: string[] | null = null, pdfPageIndex = 0): string => {
+    if (element.type === 'image' && element.dataSource === 'pdf') {
+      return getPdfPageByRenderIndex(pdfPageIndex)
+    }
+
     return getElementValue(element, state.csv.data, csvRow)
   }
 
@@ -564,6 +627,8 @@ export const useLabelEditor = () => {
   const clearPdfLabels = (): void => {
     state.pdf.fileName = null
     state.pdf.pageCount = 0
+    state.pdf.pageWidthMm = 0
+    state.pdf.pageHeightMm = 0
     state.pdf.pages = []
   }
 
@@ -587,11 +652,12 @@ export const useLabelEditor = () => {
 
       state.pdf.fileName = file.name
       state.pdf.pageCount = loaded.pageCount
+      state.pdf.pageWidthMm = loaded.pageWidthMm > 0 ? roundMm(loaded.pageWidthMm) : 0
+      state.pdf.pageHeightMm = loaded.pageHeightMm > 0 ? roundMm(loaded.pageHeightMm) : 0
       state.pdf.pages = loaded.pageImages
 
-      if (loaded.pageWidthMm > 0 && loaded.pageHeightMm > 0) {
-        state.labelWidthMm = roundMm(loaded.pageWidthMm)
-        state.labelHeightMm = roundMm(loaded.pageHeightMm)
+      for (let i = 0; i < state.elements.length; i += 1) {
+        applyPdfSizeToImageElement(state.elements[i])
       }
     } catch {
       clearPdfLabels()
@@ -674,13 +740,17 @@ export const useLabelEditor = () => {
         return
       }
 
-      const hasPdfMode = state.pdf.pages.length > 0
-      const pdfCopies = Math.max(1, Math.floor(state.pdf.copies))
-      const rows =
-        state.csv.data.length > 1
-          ? state.csv.data.slice(1)
-          : Array.from({ length: state.manualLabelCount }, () => null)
-      const totalLabels = hasPdfMode ? state.pdf.pages.length * pdfCopies : Math.max(1, rows.length)
+      const rows = getCsvRows()
+      const hasCsvFile = Boolean(state.csv.fileName)
+      const csvRowsCount = rows.length
+      const pdfPagesCount = state.pdf.pages.length
+      const baseLabelCount = getBaseLabelCount(hasCsvFile, csvRowsCount, pdfPagesCount)
+      const copiesPerLabel = pdfPagesCount === 1 ? Math.max(1, Math.floor(state.manualLabelCount)) : 1
+      const totalLabels = baseLabelCount * copiesPerLabel
+      if (totalLabels <= 0) {
+        alert('Нет данных для печати. Проверьте CSV или задайте количество вручную.')
+        return
+      }
       const totalPages = Math.ceil(totalLabels / grid.labelsPerPage)
 
       let renderedLabels = 0
@@ -724,15 +794,10 @@ export const useLabelEditor = () => {
           labelBox.style.background = '#fff'
           labelBox.style.boxSizing = 'border-box'
 
-          if (hasPdfMode) {
-            const sourcePageIndex = Math.floor(labelIndex / pdfCopies)
-            const pageImage = state.pdf.pages[sourcePageIndex] ?? ''
-            labelBox.appendChild(createPdfLabelNode(pageImage))
-          } else {
-            const row = rows[labelIndex] ?? null
-            const labelContent = createLabelDom(state.elements, (element) => getValue(element, row))
-            labelBox.appendChild(labelContent)
-          }
+          const renderIndex = Math.floor(labelIndex / copiesPerLabel)
+          const row = getCsvRowByRenderIndex(renderIndex, rows)
+          const labelContent = createLabelDom(state.elements, (element) => getValue(element, row, renderIndex))
+          labelBox.appendChild(labelContent)
 
           page.appendChild(labelBox)
 
@@ -765,7 +830,6 @@ export const useLabelEditor = () => {
     setLabelSizeMm,
     updatePrintSheet,
     setManualLabelCount,
-    setPdfCopies,
     addElement,
     deleteElement,
     selectElement,

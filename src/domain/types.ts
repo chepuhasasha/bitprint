@@ -1,5 +1,5 @@
 export type ElementType = 'text' | 'code' | 'image' | 'line'
-export type DataSource = 'static' | 'dynamic'
+export type DataSource = 'static' | 'dynamic' | 'pdf'
 export type TextAlign = 'left' | 'center' | 'right'
 export type BarcodeType =
   | 'gs1datamatrix'
@@ -67,6 +67,8 @@ export interface CsvState {
 export interface PdfLabelsState {
   fileName: string | null
   pageCount: number
+  pageWidthMm: number
+  pageHeightMm: number
   pages: string[]
   copies: number
 }

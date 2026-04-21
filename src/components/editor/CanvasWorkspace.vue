@@ -40,6 +40,7 @@ const props = defineProps<{
   labelHeightMm: number
   elements: LabelElement[]
   csvData: string[][]
+  pdfPages: string[]
   selectedId: string | null
   getValue: (element: LabelElement, csvRow?: string[] | null) => string
 }>()
@@ -237,6 +238,10 @@ onBeforeUnmount(() => {
 })
 
 const getDisplayValue = (element: LabelElement): string => {
+  if (element.type === 'image' && element.dataSource === 'pdf') {
+    return props.pdfPages[0] ?? ''
+  }
+
   return props.getValue(element)
 }
 

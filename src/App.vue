@@ -33,10 +33,6 @@ const printLabel = computed(() => {
     return editor.printProgressText.value || 'Генерация...'
   }
 
-  if (editor.state.pdf.pageCount > 0) {
-    return 'Печать PDF → A4'
-  }
-
   return 'Печать A4'
 })
 
@@ -85,10 +81,6 @@ const onLoadImage = async (file: File): Promise<void> => {
 
 const onClearPdf = (): void => {
   editor.clearPdfLabels()
-}
-
-const onPdfCopiesChange = (value: number): void => {
-  editor.setPdfCopies(value)
 }
 
 const onPrint = async (): Promise<void> => {
@@ -241,7 +233,6 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       :has-csv='Boolean(editor.state.csv.fileName)'
       :pdf-file-name='editor.state.pdf.fileName'
       :pdf-page-count='editor.state.pdf.pageCount'
-      :pdf-copies='editor.state.pdf.copies'
       :pdf-loading='editor.pdfLoading.value'
       :pdf-loading-text='editor.pdfLoadingText.value'
       :print-sheet='editor.state.printSheet'
@@ -254,7 +245,6 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       @load-csv='onLoadCsv'
       @load-pdf='onLoadPdf'
       @clear-pdf='onClearPdf'
-      @update-pdf-copies='onPdfCopiesChange'
       @reload-presets='loadPresetsIndex'
       @apply-preset='onApplyPreset'
       @select-layer='editor.selectElement'
@@ -268,6 +258,7 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       :label-height-mm='editor.state.labelHeightMm'
       :elements='editor.state.elements'
       :csv-data='editor.state.csv.data'
+      :pdf-pages='editor.state.pdf.pages'
       :selected-id='editor.state.selectedId'
       :get-value='editor.getValue'
       @select='editor.selectElement'

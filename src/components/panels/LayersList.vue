@@ -25,7 +25,9 @@ const buildLabel = (element: LabelElement): string => {
 
   const base = element.dataSource === 'static'
     ? element.staticValue
-    : `[Колонка ${element.csvColumn}]`
+    : element.dataSource === 'dynamic'
+      ? `[Колонка ${element.csvColumn}]`
+      : '[PDF]'
 
   return base.length > 15 ? `${base.slice(0, 15)}...` : base
 }

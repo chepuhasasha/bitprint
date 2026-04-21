@@ -19,6 +19,10 @@ export const getElementValue = (
     return hasStaticValue(element) ? String(element.staticValue ?? '') : ''
   }
 
+  if (element.dataSource === 'pdf') {
+    return ''
+  }
+
   const row = csvRow ?? (csvData.length > 1 ? csvData[1] : null)
   if (!row) {
     return 'ДАННЫЕ'
