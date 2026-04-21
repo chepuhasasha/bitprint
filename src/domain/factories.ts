@@ -1,5 +1,5 @@
 import { DEFAULT_IMAGE_DATA_URI } from './constants'
-import type { DataSource, ElementType, LabelElement, LineElement } from './types'
+import type { ElementType, LabelElement, LineElement } from './types'
 
 const uid = (): string => `el_${Date.now()}_${Math.floor(Math.random() * 1000)}`
 
@@ -41,7 +41,7 @@ export const createElementByType = (type: ElementType): LabelElement => {
   const base = {
     id: uid(),
     type,
-    dataSource: 'static' as DataSource,
+    dataSource: 'static' as const,
     csvColumn: '0',
   }
 
@@ -91,7 +91,7 @@ export const createElementByType = (type: ElementType): LabelElement => {
   }
 
   const line: LineElement = {
-    ...base,
+    id: uid(),
     type: 'line',
     x1: 1,
     y1: 1,

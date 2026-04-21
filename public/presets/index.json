@@ -4,6 +4,7 @@
     "code": "CL460MP",
     "url": "https://www.label.kr/Goods/Detail/460/MPL?prt=",
     "file": "CL460MP_8x8.json",
+    "labelsPerSheet": 560,
     "prices": [
       {
         "sheets": 25,
@@ -78,6 +79,7 @@
     "code": "CL680MP",
     "url": "https://www.label.kr/Goods/Detail/680/MPL?prt=",
     "file": "CL680MP_12x12.json",
+    "labelsPerSheet": 280,
     "prices": [
       {
         "sheets": 25,
@@ -152,6 +154,7 @@
     "code": "CL880MP",
     "url": "https://www.label.kr/Goods/Detail/880/MPL?prt=",
     "file": "CL880MP_12x12.json",
+    "labelsPerSheet": 280,
     "prices": [
       {
         "sheets": 25,
@@ -226,6 +229,7 @@
     "code": "CL632MP",
     "url": "https://www.label.kr/Goods/Detail/632/MPL?prt=",
     "file": "CL632MP_12_01x130.json",
+    "labelsPerSheet": 30,
     "prices": [
       {
         "sheets": 25,
@@ -300,6 +304,7 @@
     "code": "CL576MP",
     "url": "https://www.label.kr/Goods/Detail/576/MPL?prt=",
     "file": "CL576MP_15x15.json",
+    "labelsPerSheet": 176,
     "prices": [
       {
         "sheets": 25,
@@ -374,6 +379,7 @@
     "code": "CL915MP",
     "url": "https://www.label.kr/Goods/Detail/915/MPL?prt=",
     "file": "CL915MP_15x15.json",
+    "labelsPerSheet": 176,
     "prices": [
       {
         "sheets": 25,
@@ -448,6 +454,7 @@
     "code": "CL811MP",
     "url": "https://www.label.kr/Goods/Detail/811/MPL?prt=",
     "file": "CL811MP_15x259_5.json",
+    "labelsPerSheet": 11,
     "prices": [
       {
         "sheets": 25,
@@ -522,6 +529,7 @@
     "code": "CL622MP",
     "url": "https://www.label.kr/Goods/Detail/622/MPL?prt=",
     "file": "CL622MP_16x120.json",
+    "labelsPerSheet": 22,
     "prices": [
       {
         "sheets": 25,
@@ -596,6 +604,7 @@
     "code": "CL470MP",
     "url": "https://www.label.kr/Goods/Detail/470/MPL?prt=",
     "file": "CL470MP_18x6.json",
+    "labelsPerSheet": 470,
     "prices": [
       {
         "sheets": 25,
@@ -670,6 +679,7 @@
     "code": "CL923MP",
     "url": "https://www.label.kr/Goods/Detail/923/MPL?prt=",
     "file": "CL923MP_18x12.json",
+    "labelsPerSheet": 230,
     "prices": [
       {
         "sheets": 25,
@@ -744,6 +754,7 @@
     "code": "CL596MP",
     "url": "https://www.label.kr/Goods/Detail/596/MPL?prt=",
     "file": "CL596MP_18x18.json",
+    "labelsPerSheet": 96,
     "prices": [
       {
         "sheets": 25,
@@ -818,6 +829,7 @@
     "code": "CL572MP",
     "url": "https://www.label.kr/Goods/Detail/572/MPL?prt=",
     "file": "CL572MP_20x8_02.json",
+    "labelsPerSheet": 272,
     "prices": [
       {
         "sheets": 25,
@@ -892,6 +904,7 @@
     "code": "CL620MP",
     "url": "https://www.label.kr/Goods/Detail/620/MPL?prt=",
     "file": "CL620MP_20x120.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -966,6 +979,7 @@
     "code": "CL921MP",
     "url": "https://www.label.kr/Goods/Detail/921/MPL?prt=",
     "file": "CL921MP_21x21.json",
+    "labelsPerSheet": 88,
     "prices": [
       {
         "sheets": 25,
@@ -1040,6 +1054,7 @@
     "code": "CL280MP",
     "url": "https://www.label.kr/Goods/Detail/280/MPL?prt=",
     "file": "CL280MP_21x26.json",
+    "labelsPerSheet": 80,
     "prices": [
       {
         "sheets": 25,
@@ -1114,6 +1129,7 @@
     "code": "CL240MP",
     "url": "https://www.label.kr/Goods/Detail/240/MPL?prt=",
     "file": "CL240MP_22x7_5.json",
+    "labelsPerSheet": 240,
     "prices": [
       {
         "sheets": 25,
@@ -1188,6 +1204,7 @@
     "code": "CL888MP",
     "url": "https://www.label.kr/Goods/Detail/888/MPL?prt=",
     "file": "CL888MP_22x22.json",
+    "labelsPerSheet": 88,
     "prices": [
       {
         "sheets": 25,
@@ -1262,6 +1279,7 @@
     "code": "CL988MP",
     "url": "https://www.label.kr/Goods/Detail/988/MPL?prt=",
     "file": "CL988MP_23x23.json",
+    "labelsPerSheet": 88,
     "prices": [
       {
         "sheets": 25,
@@ -1336,6 +1354,7 @@
     "code": "CL917MP",
     "url": "https://www.label.kr/Goods/Detail/917/MPL?prt=",
     "file": "CL917MP_25x8_99.json",
+    "labelsPerSheet": 217,
     "prices": [
       {
         "sheets": 25,
@@ -1410,6 +1429,7 @@
     "code": "CL570MP",
     "url": "https://www.label.kr/Goods/Detail/570/MPL?prt=",
     "file": "CL570MP_25x25.json",
+    "labelsPerSheet": 70,
     "prices": [
       {
         "sheets": 25,
@@ -1484,6 +1504,7 @@
     "code": "CL270MP",
     "url": "https://www.label.kr/Goods/Detail/270/MPL?prt=",
     "file": "CL270MP_25x25.json",
+    "labelsPerSheet": 70,
     "prices": [
       {
         "sheets": 25,
@@ -1558,6 +1579,7 @@
     "code": "CL978MP",
     "url": "https://www.label.kr/Goods/Detail/978/MPL?prt=",
     "file": "CL978MP_25x30.json",
+    "labelsPerSheet": 56,
     "prices": [
       {
         "sheets": 25,
@@ -1632,6 +1654,7 @@
     "code": "CL975MP",
     "url": "https://www.label.kr/Goods/Detail/975/MPL?prt=",
     "file": "CL975MP_25x57.json",
+    "labelsPerSheet": 35,
     "prices": [
       {
         "sheets": 25,
@@ -1706,6 +1729,7 @@
     "code": "CL808MP",
     "url": "https://www.label.kr/Goods/Detail/808/MPL?prt=",
     "file": "CL808MP_25x279_5.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -1780,6 +1804,7 @@
     "code": "CL589MP",
     "url": "https://www.label.kr/Goods/Detail/589/MPL?prt=",
     "file": "CL589MP_25_4x10_02.json",
+    "labelsPerSheet": 189,
     "prices": [
       {
         "sheets": 25,
@@ -1854,6 +1879,7 @@
     "code": "CL645MP",
     "url": "https://www.label.kr/Goods/Detail/645/MPL?prt=",
     "file": "CL645MP_26x8.json",
+    "labelsPerSheet": 245,
     "prices": [
       {
         "sheets": 25,
@@ -1928,6 +1954,7 @@
     "code": "CL554MP",
     "url": "https://www.label.kr/Goods/Detail/554/MPL?prt=",
     "file": "CL554MP_26x29_53.json",
+    "labelsPerSheet": 54,
     "prices": [
       {
         "sheets": 25,
@@ -2002,6 +2029,7 @@
     "code": "CL806MP",
     "url": "https://www.label.kr/Goods/Detail/806/MPL?prt=",
     "file": "CL806MP_29x285.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -2076,6 +2104,7 @@
     "code": "CL938MP",
     "url": "https://www.label.kr/Goods/Detail/938/MPL?prt=",
     "file": "CL938MP_30x8.json",
+    "labelsPerSheet": 204,
     "prices": [
       {
         "sheets": 25,
@@ -2150,6 +2179,7 @@
     "code": "CL566MP",
     "url": "https://www.label.kr/Goods/Detail/566/MPL?prt=",
     "file": "CL566MP_30x14.json",
+    "labelsPerSheet": 96,
     "prices": [
       {
         "sheets": 25,
@@ -2224,6 +2254,7 @@
     "code": "CL884MP",
     "url": "https://www.label.kr/Goods/Detail/884/MPL?prt=",
     "file": "CL884MP_30x20.json",
+    "labelsPerSheet": 84,
     "prices": [
       {
         "sheets": 25,
@@ -2298,6 +2329,7 @@
     "code": "CL586MP",
     "url": "https://www.label.kr/Goods/Detail/586/MPL?prt=",
     "file": "CL586MP_30x30.json",
+    "labelsPerSheet": 48,
     "prices": [
       {
         "sheets": 25,
@@ -2372,6 +2404,7 @@
     "code": "CL954MP",
     "url": "https://www.label.kr/Goods/Detail/954/MPL?prt=",
     "file": "CL954MP_30x30.json",
+    "labelsPerSheet": 54,
     "prices": [
       {
         "sheets": 25,
@@ -2446,6 +2479,7 @@
     "code": "CL966MP",
     "url": "https://www.label.kr/Goods/Detail/966/MPL?prt=",
     "file": "CL966MP_30x40.json",
+    "labelsPerSheet": 36,
     "prices": [
       {
         "sheets": 25,
@@ -2520,6 +2554,7 @@
     "code": "CL505MP",
     "url": "https://www.label.kr/Goods/Detail/505/MPL?prt=",
     "file": "CL505MP_31x10.json",
+    "labelsPerSheet": 105,
     "prices": [
       {
         "sheets": 25,
@@ -2594,6 +2629,7 @@
     "code": "CL262MP",
     "url": "https://www.label.kr/Goods/Detail/262/MPL?prt=",
     "file": "CL262MP_31_9x140.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -2668,6 +2704,7 @@
     "code": "CL550MP",
     "url": "https://www.label.kr/Goods/Detail/550/MPL?prt=",
     "file": "CL550MP_32x25_05.json",
+    "labelsPerSheet": 50,
     "prices": [
       {
         "sheets": 25,
@@ -2742,6 +2779,7 @@
     "code": "CL568MP",
     "url": "https://www.label.kr/Goods/Detail/568/MPL?prt=",
     "file": "CL568MP_33x33.json",
+    "labelsPerSheet": 48,
     "prices": [
       {
         "sheets": 25,
@@ -2816,6 +2854,7 @@
     "code": "CL654MP",
     "url": "https://www.label.kr/Goods/Detail/654/MPL?prt=",
     "file": "CL654MP_33x59.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -2890,6 +2929,7 @@
     "code": "CL552MP",
     "url": "https://www.label.kr/Goods/Detail/552/MPL?prt=",
     "file": "CL552MP_34x8.json",
+    "labelsPerSheet": 125,
     "prices": [
       {
         "sheets": 25,
@@ -2964,6 +3004,7 @@
     "code": "CL595MP",
     "url": "https://www.label.kr/Goods/Detail/595/MPL?prt=",
     "file": "CL595MP_35x12.json",
+    "labelsPerSheet": 95,
     "prices": [
       {
         "sheets": 25,
@@ -3038,6 +3079,7 @@
     "code": "CL257MP",
     "url": "https://www.label.kr/Goods/Detail/257/MPL?prt=",
     "file": "CL257MP_35x35.json",
+    "labelsPerSheet": 35,
     "prices": [
       {
         "sheets": 25,
@@ -3112,6 +3154,7 @@
     "code": "CL456MP",
     "url": "https://www.label.kr/Goods/Detail/456/MPL?prt=",
     "file": "CL456MP_35x45.json",
+    "labelsPerSheet": 30,
     "prices": [
       {
         "sheets": 25,
@@ -3186,6 +3229,7 @@
     "code": "CL255MP",
     "url": "https://www.label.kr/Goods/Detail/255/MPL?prt=",
     "file": "CL255MP_35x55.json",
+    "labelsPerSheet": 25,
     "prices": [
       {
         "sheets": 25,
@@ -3260,6 +3304,7 @@
     "code": "CL535MP",
     "url": "https://www.label.kr/Goods/Detail/535/MPL?prt=",
     "file": "CL535MP_36x36.json",
+    "labelsPerSheet": 35,
     "prices": [
       {
         "sheets": 25,
@@ -3334,6 +3379,7 @@
     "code": "CL559MP",
     "url": "https://www.label.kr/Goods/Detail/559/MPL?prt=",
     "file": "CL559MP_37x30_03.json",
+    "labelsPerSheet": 45,
     "prices": [
       {
         "sheets": 25,
@@ -3408,6 +3454,7 @@
     "code": "CL858MP",
     "url": "https://www.label.kr/Goods/Detail/858/MPL?prt=",
     "file": "CL858MP_37x32.json",
+    "labelsPerSheet": 40,
     "prices": [
       {
         "sheets": 25,
@@ -3482,6 +3529,7 @@
     "code": "CL920MP",
     "url": "https://www.label.kr/Goods/Detail/920/MPL?prt=",
     "file": "CL920MP_38x50.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -3556,6 +3604,7 @@
     "code": "CL910MP",
     "url": "https://www.label.kr/Goods/Detail/910/MPL?prt=",
     "file": "CL910MP_38x130.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -3630,6 +3679,7 @@
     "code": "CL562MP",
     "url": "https://www.label.kr/Goods/Detail/562/MPL?prt=",
     "file": "CL562MP_38_1x19_1.json",
+    "labelsPerSheet": 60,
     "prices": [
       {
         "sheets": 25,
@@ -3704,6 +3754,7 @@
     "code": "CL551MP",
     "url": "https://www.label.kr/Goods/Detail/551/MPL?prt=",
     "file": "CL551MP_38_1x21_07.json",
+    "labelsPerSheet": 65,
     "prices": [
       {
         "sheets": 25,
@@ -3778,6 +3829,7 @@
     "code": "CL546MP",
     "url": "https://www.label.kr/Goods/Detail/546/MPL?prt=",
     "file": "CL546MP_38_1x38_1.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -3852,6 +3904,7 @@
     "code": "CL247MP",
     "url": "https://www.label.kr/Goods/Detail/247/MPL?prt=",
     "file": "CL247MP_39_9x40_08.json",
+    "labelsPerSheet": 28,
     "prices": [
       {
         "sheets": 25,
@@ -3926,6 +3979,7 @@
     "code": "CL976MP",
     "url": "https://www.label.kr/Goods/Detail/976/MPL?prt=",
     "file": "CL976MP_40x12.json",
+    "labelsPerSheet": 76,
     "prices": [
       {
         "sheets": 25,
@@ -4000,6 +4054,7 @@
     "code": "CL876MP",
     "url": "https://www.label.kr/Goods/Detail/876/MPL?prt=",
     "file": "CL876MP_40x14.json",
+    "labelsPerSheet": 76,
     "prices": [
       {
         "sheets": 25,
@@ -4074,6 +4129,7 @@
     "code": "CL850MP",
     "url": "https://www.label.kr/Goods/Detail/850/MPL?prt=",
     "file": "CL850MP_40x25.json",
+    "labelsPerSheet": 50,
     "prices": [
       {
         "sheets": 25,
@@ -4148,6 +4204,7 @@
     "code": "CL947MP",
     "url": "https://www.label.kr/Goods/Detail/947/MPL?prt=",
     "file": "CL947MP_40x71.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -4222,6 +4279,7 @@
     "code": "CL805MP",
     "url": "https://www.label.kr/Goods/Detail/805/MPL?prt=",
     "file": "CL805MP_40x279_5.json",
+    "labelsPerSheet": 5,
     "prices": [
       {
         "sheets": 25,
@@ -4296,6 +4354,7 @@
     "code": "CL847MP",
     "url": "https://www.label.kr/Goods/Detail/847/MPL?prt=",
     "file": "CL847MP_45x40.json",
+    "labelsPerSheet": 28,
     "prices": [
       {
         "sheets": 25,
@@ -4370,6 +4429,7 @@
     "code": "CL520MP",
     "url": "https://www.label.kr/Goods/Detail/520/MPL?prt=",
     "file": "CL520MP_45x45.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -4444,6 +4504,7 @@
     "code": "CL420MP",
     "url": "https://www.label.kr/Goods/Detail/420/MPL?prt=",
     "file": "CL420MP_45x45.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -4518,6 +4579,7 @@
     "code": "CL945MP",
     "url": "https://www.label.kr/Goods/Detail/945/MPL?prt=",
     "file": "CL945MP_45x68.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -4592,6 +4654,7 @@
     "code": "CL912MP",
     "url": "https://www.label.kr/Goods/Detail/912/MPL?prt=",
     "file": "CL912MP_45x90.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -4666,6 +4729,7 @@
     "code": "CL547MP",
     "url": "https://www.label.kr/Goods/Detail/547/MPL?prt=",
     "file": "CL547MP_45_8x21_13.json",
+    "labelsPerSheet": 48,
     "prices": [
       {
         "sheets": 25,
@@ -4740,6 +4804,7 @@
     "code": "CL541MP",
     "url": "https://www.label.kr/Goods/Detail/541/MPL?prt=",
     "file": "CL541MP_45_9x11_17.json",
+    "labelsPerSheet": 84,
     "prices": [
       {
         "sheets": 25,
@@ -4814,6 +4879,7 @@
     "code": "CL544MP",
     "url": "https://www.label.kr/Goods/Detail/544/MPL?prt=",
     "file": "CL544MP_45_9x25_5.json",
+    "labelsPerSheet": 44,
     "prices": [
       {
         "sheets": 25,
@@ -4888,6 +4954,7 @@
     "code": "CL548MP",
     "url": "https://www.label.kr/Goods/Detail/548/MPL?prt=",
     "file": "CL548MP_45_9x30.json",
+    "labelsPerSheet": 32,
     "prices": [
       {
         "sheets": 25,
@@ -4962,6 +5029,7 @@
     "code": "CL644MP",
     "url": "https://www.label.kr/Goods/Detail/644/MPL?prt=",
     "file": "CL644MP_46x7_99.json",
+    "labelsPerSheet": 136,
     "prices": [
       {
         "sheets": 25,
@@ -5036,6 +5104,7 @@
     "code": "CL946MP",
     "url": "https://www.label.kr/Goods/Detail/946/MPL?prt=",
     "file": "CL946MP_46x23.json",
+    "labelsPerSheet": 48,
     "prices": [
       {
         "sheets": 25,
@@ -5110,6 +5179,7 @@
     "code": "CL540MP",
     "url": "https://www.label.kr/Goods/Detail/540/MPL?prt=",
     "file": "CL540MP_46_9x26_9.json",
+    "labelsPerSheet": 40,
     "prices": [
       {
         "sheets": 25,
@@ -5184,6 +5254,7 @@
     "code": "CL580MP",
     "url": "https://www.label.kr/Goods/Detail/580/MPL?prt=",
     "file": "CL580MP_48x48.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -5258,6 +5329,7 @@
     "code": "CL843MP",
     "url": "https://www.label.kr/Goods/Detail/843/MPL?prt=",
     "file": "CL843MP_48x90.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -5332,6 +5404,7 @@
     "code": "CL642MP",
     "url": "https://www.label.kr/Goods/Detail/642/MPL?prt=",
     "file": "CL642MP_48x129_8.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -5406,6 +5479,7 @@
     "code": "CL244MP",
     "url": "https://www.label.kr/Goods/Detail/244/MPL?prt=",
     "file": "CL244MP_48_5x70.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -5480,6 +5554,7 @@
     "code": "CL560MP",
     "url": "https://www.label.kr/Goods/Detail/560/MPL?prt=",
     "file": "CL560MP_49x15.json",
+    "labelsPerSheet": 60,
     "prices": [
       {
         "sheets": 25,
@@ -5554,6 +5629,7 @@
     "code": "CL944MP",
     "url": "https://www.label.kr/Goods/Detail/944/MPL?prt=",
     "file": "CL944MP_50x6.json",
+    "labelsPerSheet": 144,
     "prices": [
       {
         "sheets": 25,
@@ -5628,6 +5704,7 @@
     "code": "CL536MP",
     "url": "https://www.label.kr/Goods/Detail/536/MPL?prt=",
     "file": "CL536MP_50x20.json",
+    "labelsPerSheet": 36,
     "prices": [
       {
         "sheets": 25,
@@ -5702,6 +5779,7 @@
     "code": "CL830MP",
     "url": "https://www.label.kr/Goods/Detail/830/MPL?prt=",
     "file": "CL830MP_50x25.json",
+    "labelsPerSheet": 30,
     "prices": [
       {
         "sheets": 25,
@@ -5776,6 +5854,7 @@
     "code": "CL838MP",
     "url": "https://www.label.kr/Goods/Detail/838/MPL?prt=",
     "file": "CL838MP_50x29.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -5850,6 +5929,7 @@
     "code": "CL846MP",
     "url": "https://www.label.kr/Goods/Detail/846/MPL?prt=",
     "file": "CL846MP_50x40.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -5924,6 +6004,7 @@
     "code": "CL445MP",
     "url": "https://www.label.kr/Goods/Detail/445/MPL?prt=",
     "file": "CL445MP_50x50.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -5998,6 +6079,7 @@
     "code": "CL844MP",
     "url": "https://www.label.kr/Goods/Detail/844/MPL?prt=",
     "file": "CL844MP_50x67.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -6072,6 +6154,7 @@
     "code": "CL804MP",
     "url": "https://www.label.kr/Goods/Detail/804/MPL?prt=",
     "file": "CL804MP_50x279_5.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -6146,6 +6229,7 @@
     "code": "CL932MP",
     "url": "https://www.label.kr/Goods/Detail/932/MPL?prt=",
     "file": "CL932MP_52x132.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -6220,6 +6304,7 @@
     "code": "CL681MP",
     "url": "https://www.label.kr/Goods/Detail/681/MPL?prt=",
     "file": "CL681MP_53x10.json",
+    "labelsPerSheet": 81,
     "prices": [
       {
         "sheets": 25,
@@ -6294,6 +6379,7 @@
     "code": "CL953MP",
     "url": "https://www.label.kr/Goods/Detail/953/MPL?prt=",
     "file": "CL953MP_53x45.json",
+    "labelsPerSheet": 15,
     "prices": [
       {
         "sheets": 25,
@@ -6368,6 +6454,7 @@
     "code": "CL635MP",
     "url": "https://www.label.kr/Goods/Detail/635/MPL?prt=",
     "file": "CL635MP_54x54.json",
+    "labelsPerSheet": 15,
     "prices": [
       {
         "sheets": 25,
@@ -6442,6 +6529,7 @@
     "code": "CL845MP",
     "url": "https://www.label.kr/Goods/Detail/845/MPL?prt=",
     "file": "CL845MP_55x18.json",
+    "labelsPerSheet": 45,
     "prices": [
       {
         "sheets": 25,
@@ -6516,6 +6604,7 @@
     "code": "CL837MP",
     "url": "https://www.label.kr/Goods/Detail/837/MPL?prt=",
     "file": "CL837MP_55x40.json",
+    "labelsPerSheet": 21,
     "prices": [
       {
         "sheets": 25,
@@ -6590,6 +6679,7 @@
     "code": "CL935MP",
     "url": "https://www.label.kr/Goods/Detail/935/MPL?prt=",
     "file": "CL935MP_58x52.json",
+    "labelsPerSheet": 15,
     "prices": [
       {
         "sheets": 25,
@@ -6664,6 +6754,7 @@
     "code": "CL530MP",
     "url": "https://www.label.kr/Goods/Detail/530/MPL?prt=",
     "file": "CL530MP_58_1x22.json",
+    "labelsPerSheet": 30,
     "prices": [
       {
         "sheets": 25,
@@ -6738,6 +6829,7 @@
     "code": "CL842MP",
     "url": "https://www.label.kr/Goods/Detail/842/MPL?prt=",
     "file": "CL842MP_60x19_95.json",
+    "labelsPerSheet": 42,
     "prices": [
       {
         "sheets": 25,
@@ -6812,6 +6904,7 @@
     "code": "CL835MP",
     "url": "https://www.label.kr/Goods/Detail/835/MPL?prt=",
     "file": "CL835MP_60x35.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -6886,6 +6979,7 @@
     "code": "CL818MP",
     "url": "https://www.label.kr/Goods/Detail/818/MPL?prt=",
     "file": "CL818MP_60x48.json",
+    "labelsPerSheet": 18,
     "prices": [
       {
         "sheets": 25,
@@ -6960,6 +7054,7 @@
     "code": "CL634MP",
     "url": "https://www.label.kr/Goods/Detail/634/MPL?prt=",
     "file": "CL634MP_60x60.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -7034,6 +7129,7 @@
     "code": "CL961MP",
     "url": "https://www.label.kr/Goods/Detail/961/MPL?prt=",
     "file": "CL961MP_61x68.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -7108,6 +7204,7 @@
     "code": "CL545MP",
     "url": "https://www.label.kr/Goods/Detail/545/MPL?prt=",
     "file": "CL545MP_61_9x17_82.json",
+    "labelsPerSheet": 45,
     "prices": [
       {
         "sheets": 25,
@@ -7182,6 +7279,7 @@
     "code": "CL231MP",
     "url": "https://www.label.kr/Goods/Detail/231/MPL?prt=",
     "file": "CL231MP_62x23_95.json",
+    "labelsPerSheet": 33,
     "prices": [
       {
         "sheets": 25,
@@ -7256,6 +7354,7 @@
     "code": "CL833MP",
     "url": "https://www.label.kr/Goods/Detail/833/MPL?prt=",
     "file": "CL833MP_62x83.json",
+    "labelsPerSheet": 9,
     "prices": [
       {
         "sheets": 25,
@@ -7330,6 +7429,7 @@
     "code": "CL233MP",
     "url": "https://www.label.kr/Goods/Detail/233/MPL?prt=",
     "file": "CL233MP_62x91.json",
+    "labelsPerSheet": 9,
     "prices": [
       {
         "sheets": 25,
@@ -7404,6 +7504,7 @@
     "code": "CL239MP",
     "url": "https://www.label.kr/Goods/Detail/239/MPL?prt=",
     "file": "CL239MP_62_2x30_03.json",
+    "labelsPerSheet": 27,
     "prices": [
       {
         "sheets": 25,
@@ -7478,6 +7579,7 @@
     "code": "CL254MP",
     "url": "https://www.label.kr/Goods/Detail/254/MPL?prt=",
     "file": "CL254MP_62_5x15.json",
+    "labelsPerSheet": 54,
     "prices": [
       {
         "sheets": 25,
@@ -7552,6 +7654,7 @@
     "code": "CL237MP",
     "url": "https://www.label.kr/Goods/Detail/237/MPL?prt=",
     "file": "CL237MP_63_4x38_2.json",
+    "labelsPerSheet": 21,
     "prices": [
       {
         "sheets": 25,
@@ -7626,6 +7729,7 @@
     "code": "CL236MP",
     "url": "https://www.label.kr/Goods/Detail/236/MPL?prt=",
     "file": "CL236MP_63_4x46_51.json",
+    "labelsPerSheet": 18,
     "prices": [
       {
         "sheets": 25,
@@ -7700,6 +7804,7 @@
     "code": "CL234MP",
     "url": "https://www.label.kr/Goods/Detail/234/MPL?prt=",
     "file": "CL234MP_63_4x71_53.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -7774,6 +7879,7 @@
     "code": "CL836MP",
     "url": "https://www.label.kr/Goods/Detail/836/MPL?prt=",
     "file": "CL836MP_63_5x45.json",
+    "labelsPerSheet": 18,
     "prices": [
       {
         "sheets": 25,
@@ -7848,6 +7954,7 @@
     "code": "CL534MP",
     "url": "https://www.label.kr/Goods/Detail/534/MPL?prt=",
     "file": "CL534MP_63_7x63_7.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -7922,6 +8029,7 @@
     "code": "CL437MP",
     "url": "https://www.label.kr/Goods/Detail/437/MPL?prt=",
     "file": "CL437MP_63_8x39_97.json",
+    "labelsPerSheet": 21,
     "prices": [
       {
         "sheets": 25,
@@ -7996,6 +8104,7 @@
     "code": "CL439MP",
     "url": "https://www.label.kr/Goods/Detail/439/MPL?prt=",
     "file": "CL439MP_64x21.json",
+    "labelsPerSheet": 39,
     "prices": [
       {
         "sheets": 25,
@@ -8070,6 +8179,7 @@
     "code": "CL438MP",
     "url": "https://www.label.kr/Goods/Detail/438/MPL?prt=",
     "file": "CL438MP_64x34_9.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -8144,6 +8254,7 @@
     "code": "CL238MP",
     "url": "https://www.label.kr/Goods/Detail/238/MPL?prt=",
     "file": "CL238MP_64_5x33_71.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -8218,6 +8329,7 @@
     "code": "CL969MP",
     "url": "https://www.label.kr/Goods/Detail/969/MPL?prt=",
     "file": "CL969MP_65x11_98.json",
+    "labelsPerSheet": 69,
     "prices": [
       {
         "sheets": 25,
@@ -8292,6 +8404,7 @@
     "code": "CL235MP",
     "url": "https://www.label.kr/Goods/Detail/235/MPL?prt=",
     "file": "CL235MP_65x55.json",
+    "labelsPerSheet": 15,
     "prices": [
       {
         "sheets": 25,
@@ -8366,6 +8479,7 @@
     "code": "CL834MP",
     "url": "https://www.label.kr/Goods/Detail/834/MPL?prt=",
     "file": "CL834MP_65x65.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -8440,6 +8554,7 @@
     "code": "CL232MP",
     "url": "https://www.label.kr/Goods/Detail/232/MPL?prt=",
     "file": "CL232MP_65x140.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -8514,6 +8629,7 @@
     "code": "CL803MP",
     "url": "https://www.label.kr/Goods/Detail/803/MPL?prt=",
     "file": "CL803MP_65x279_5.json",
+    "labelsPerSheet": 3,
     "prices": [
       {
         "sheets": 25,
@@ -8588,6 +8704,7 @@
     "code": "CL930MP",
     "url": "https://www.label.kr/Goods/Detail/930/MPL?prt=",
     "file": "CL930MP_66x25.json",
+    "labelsPerSheet": 30,
     "prices": [
       {
         "sheets": 25,
@@ -8662,6 +8779,7 @@
     "code": "CL525MP",
     "url": "https://www.label.kr/Goods/Detail/525/MPL?prt=",
     "file": "CL525MP_69_7x51_86.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -8736,6 +8854,7 @@
     "code": "CL918MP",
     "url": "https://www.label.kr/Goods/Detail/918/MPL?prt=",
     "file": "CL918MP_70x30.json",
+    "labelsPerSheet": 18,
     "prices": [
       {
         "sheets": 25,
@@ -8810,6 +8929,7 @@
     "code": "CL906MP",
     "url": "https://www.label.kr/Goods/Detail/906/MPL?prt=",
     "file": "CL906MP_70x148_5.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -8884,6 +9004,7 @@
     "code": "CL521MP",
     "url": "https://www.label.kr/Goods/Detail/521/MPL?prt=",
     "file": "CL521MP_71_8x21_16.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -8958,6 +9079,7 @@
     "code": "CL821MP",
     "url": "https://www.label.kr/Goods/Detail/821/MPL?prt=",
     "file": "CL821MP_72x13.json",
+    "labelsPerSheet": 42,
     "prices": [
       {
         "sheets": 25,
@@ -9032,6 +9154,7 @@
     "code": "CL973MP",
     "url": "https://www.label.kr/Goods/Detail/973/MPL?prt=",
     "file": "CL973MP_73x73.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -9106,6 +9229,7 @@
     "code": "CL423MP",
     "url": "https://www.label.kr/Goods/Detail/423/MPL?prt=",
     "file": "CL423MP_75x75.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -9180,6 +9304,7 @@
     "code": "CL908MP",
     "url": "https://www.label.kr/Goods/Detail/908/MPL?prt=",
     "file": "CL908MP_76x56.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -9254,6 +9379,7 @@
     "code": "CL526FMP",
     "url": "https://www.label.kr/Goods/Detail/526F/MPL?prt=",
     "file": "CL526FMP_76_2x46_4.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -9328,6 +9454,7 @@
     "code": "CL656MP",
     "url": "https://www.label.kr/Goods/Detail/656/MPL?prt=",
     "file": "CL656MP_80x10.json",
+    "labelsPerSheet": 56,
     "prices": [
       {
         "sheets": 25,
@@ -9402,6 +9529,7 @@
     "code": "CL628MP",
     "url": "https://www.label.kr/Goods/Detail/628/MPL?prt=",
     "file": "CL628MP_80x17.json",
+    "labelsPerSheet": 28,
     "prices": [
       {
         "sheets": 25,
@@ -9476,6 +9604,7 @@
     "code": "CL820MP",
     "url": "https://www.label.kr/Goods/Detail/820/MPL?prt=",
     "file": "CL820MP_80x25.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -9550,6 +9679,7 @@
     "code": "CL829MP",
     "url": "https://www.label.kr/Goods/Detail/829/MPL?prt=",
     "file": "CL829MP_80x29_94.json",
+    "labelsPerSheet": 18,
     "prices": [
       {
         "sheets": 25,
@@ -9624,6 +9754,7 @@
     "code": "CL828MP",
     "url": "https://www.label.kr/Goods/Detail/828/MPL?prt=",
     "file": "CL828MP_80x35.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -9698,6 +9829,7 @@
     "code": "CL527MP",
     "url": "https://www.label.kr/Goods/Detail/527/MPL?prt=",
     "file": "CL527MP_80x40.json",
+    "labelsPerSheet": 14,
     "prices": [
       {
         "sheets": 25,
@@ -9772,6 +9904,7 @@
     "code": "CL826MP",
     "url": "https://www.label.kr/Goods/Detail/826/MPL?prt=",
     "file": "CL826MP_80x45.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -9846,6 +9979,7 @@
     "code": "CL624MP",
     "url": "https://www.label.kr/Goods/Detail/624/MPL?prt=",
     "file": "CL624MP_80x60.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -9920,6 +10054,7 @@
     "code": "CL926MP",
     "url": "https://www.label.kr/Goods/Detail/926/MPL?prt=",
     "file": "CL926MP_82x42.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -9994,6 +10129,7 @@
     "code": "CL822MP",
     "url": "https://www.label.kr/Goods/Detail/822/MPL?prt=",
     "file": "CL822MP_82x120.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -10068,6 +10204,7 @@
     "code": "CL220MP",
     "url": "https://www.label.kr/Goods/Detail/220/MPL?prt=",
     "file": "CL220MP_83_9x28_03.json",
+    "labelsPerSheet": 20,
     "prices": [
       {
         "sheets": 25,
@@ -10142,6 +10279,7 @@
     "code": "CL425MP",
     "url": "https://www.label.kr/Goods/Detail/425/MPL?prt=",
     "file": "CL425MP_84_5x53_5.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -10216,6 +10354,7 @@
     "code": "CL927MP",
     "url": "https://www.label.kr/Goods/Detail/927/MPL?prt=",
     "file": "CL927MP_85x40.json",
+    "labelsPerSheet": 14,
     "prices": [
       {
         "sheets": 25,
@@ -10290,6 +10429,7 @@
     "code": "CL506MP",
     "url": "https://www.label.kr/Goods/Detail/506/MPL?prt=",
     "file": "CL506MP_85x85.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -10364,6 +10504,7 @@
     "code": "CL823MP",
     "url": "https://www.label.kr/Goods/Detail/823/MPL?prt=",
     "file": "CL823MP_85x85.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -10438,6 +10579,7 @@
     "code": "CL430MP",
     "url": "https://www.label.kr/Goods/Detail/430/MPL?prt=",
     "file": "CL430MP_87x16_97.json",
+    "labelsPerSheet": 30,
     "prices": [
       {
         "sheets": 25,
@@ -10512,6 +10654,7 @@
     "code": "CL924MP",
     "url": "https://www.label.kr/Goods/Detail/924/MPL?prt=",
     "file": "CL924MP_88x60.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -10586,6 +10729,7 @@
     "code": "CL422MP",
     "url": "https://www.label.kr/Goods/Detail/422/MPL?prt=",
     "file": "CL422MP_89x141_5.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -10660,6 +10804,7 @@
     "code": "CL824MP",
     "url": "https://www.label.kr/Goods/Detail/824/MPL?prt=",
     "file": "CL824MP_90x20.json",
+    "labelsPerSheet": 24,
     "prices": [
       {
         "sheets": 25,
@@ -10734,6 +10879,7 @@
     "code": "CL827MP",
     "url": "https://www.label.kr/Goods/Detail/827/MPL?prt=",
     "file": "CL827MP_90x40.json",
+    "labelsPerSheet": 14,
     "prices": [
       {
         "sheets": 25,
@@ -10808,6 +10954,7 @@
     "code": "CL952MP",
     "url": "https://www.label.kr/Goods/Detail/952/MPL?prt=",
     "file": "CL952MP_90x50.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -10882,6 +11029,7 @@
     "code": "CL636MP",
     "url": "https://www.label.kr/Goods/Detail/636/MPL?prt=",
     "file": "CL636MP_95x14.json",
+    "labelsPerSheet": 36,
     "prices": [
       {
         "sheets": 25,
@@ -10956,6 +11104,7 @@
     "code": "CL825MP",
     "url": "https://www.label.kr/Goods/Detail/825/MPL?prt=",
     "file": "CL825MP_95x50.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -11030,6 +11179,7 @@
     "code": "CL630MP",
     "url": "https://www.label.kr/Goods/Detail/630/MPL?prt=",
     "file": "CL630MP_97x18.json",
+    "labelsPerSheet": 30,
     "prices": [
       {
         "sheets": 25,
@@ -11104,6 +11254,7 @@
     "code": "CL504MP",
     "url": "https://www.label.kr/Goods/Detail/504/MPL?prt=",
     "file": "CL504MP_98x98.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -11178,6 +11329,7 @@
     "code": "CL922MP",
     "url": "https://www.label.kr/Goods/Detail/922/MPL?prt=",
     "file": "CL922MP_98x137.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -11252,6 +11404,7 @@
     "code": "CL228MP",
     "url": "https://www.label.kr/Goods/Detail/228/MPL?prt=",
     "file": "CL228MP_98_8x33_67.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -11326,6 +11479,7 @@
     "code": "CL227MP",
     "url": "https://www.label.kr/Goods/Detail/227/MPL?prt=",
     "file": "CL227MP_98_8x38_05.json",
+    "labelsPerSheet": 14,
     "prices": [
       {
         "sheets": 25,
@@ -11400,6 +11554,7 @@
     "code": "CL427MP",
     "url": "https://www.label.kr/Goods/Detail/427/MPL?prt=",
     "file": "CL427MP_98_8x40.json",
+    "labelsPerSheet": 14,
     "prices": [
       {
         "sheets": 25,
@@ -11474,6 +11629,7 @@
     "code": "CL225MP",
     "url": "https://www.label.kr/Goods/Detail/225/MPL?prt=",
     "file": "CL225MP_98_8x56_6.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -11548,6 +11704,7 @@
     "code": "CL223MP",
     "url": "https://www.label.kr/Goods/Detail/223/MPL?prt=",
     "file": "CL223MP_98_8x92_7.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -11622,6 +11779,7 @@
     "code": "CL428MP",
     "url": "https://www.label.kr/Goods/Detail/428/MPL?prt=",
     "file": "CL428MP_99_1x34_8.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -11696,6 +11854,7 @@
     "code": "CL224MP",
     "url": "https://www.label.kr/Goods/Detail/224/MPL?prt=",
     "file": "CL224MP_99_1x67_5.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -11770,6 +11929,7 @@
     "code": "CL222MP",
     "url": "https://www.label.kr/Goods/Detail/222/MPL?prt=",
     "file": "CL222MP_99_5x138_2.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -11844,6 +12004,7 @@
     "code": "CL426MP",
     "url": "https://www.label.kr/Goods/Detail/426/MPL?prt=",
     "file": "CL426MP_99_6x46_4.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -11918,6 +12079,7 @@
     "code": "CL429MP",
     "url": "https://www.label.kr/Goods/Detail/429/MPL?prt=",
     "file": "CL429MP_99_8x29_89.json",
+    "labelsPerSheet": 18,
     "prices": [
       {
         "sheets": 25,
@@ -11992,6 +12154,7 @@
     "code": "CL848MP",
     "url": "https://www.label.kr/Goods/Detail/848/MPL?prt=",
     "file": "CL848MP_100x9.json",
+    "labelsPerSheet": 48,
     "prices": [
       {
         "sheets": 25,
@@ -12066,6 +12229,7 @@
     "code": "CL522MP",
     "url": "https://www.label.kr/Goods/Detail/522/MPL?prt=",
     "file": "CL522MP_100x24_5.json",
+    "labelsPerSheet": 22,
     "prices": [
       {
         "sheets": 25,
@@ -12140,6 +12304,7 @@
     "code": "CL424MP",
     "url": "https://www.label.kr/Goods/Detail/424/MPL?prt=",
     "file": "CL424MP_100x70.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -12214,6 +12379,7 @@
     "code": "CL602MP",
     "url": "https://www.label.kr/Goods/Detail/602/MPL?prt=",
     "file": "CL602MP_100x250.json",
+    "labelsPerSheet": 2,
     "prices": [
       {
         "sheets": 25,
@@ -12288,6 +12454,7 @@
     "code": "CL925MP",
     "url": "https://www.label.kr/Goods/Detail/925/MPL?prt=",
     "file": "CL925MP_105x55.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -12362,6 +12529,7 @@
     "code": "CL610MP",
     "url": "https://www.label.kr/Goods/Detail/610/MPL?prt=",
     "file": "CL610MP_105x59_4.json",
+    "labelsPerSheet": 10,
     "prices": [
       {
         "sheets": 25,
@@ -12436,6 +12604,7 @@
     "code": "CL608MP",
     "url": "https://www.label.kr/Goods/Detail/608/MPL?prt=",
     "file": "CL608MP_105x74_25.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -12510,6 +12679,7 @@
     "code": "CL905MP",
     "url": "https://www.label.kr/Goods/Detail/905/MPL?prt=",
     "file": "CL905MP_105x85.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -12584,6 +12754,7 @@
     "code": "CL606MP",
     "url": "https://www.label.kr/Goods/Detail/606/MPL?prt=",
     "file": "CL606MP_105x99.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -12658,6 +12829,7 @@
     "code": "CL604MP",
     "url": "https://www.label.kr/Goods/Detail/604/MPL?prt=",
     "file": "CL604MP_105x148_5.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -12732,6 +12904,7 @@
     "code": "CL621MP",
     "url": "https://www.label.kr/Goods/Detail/621/MPL?prt=",
     "file": "CL621MP_105x297.json",
+    "labelsPerSheet": 2,
     "prices": [
       {
         "sheets": 25,
@@ -12806,6 +12979,7 @@
     "code": "CL616MP",
     "url": "https://www.label.kr/Goods/Detail/616/MPL?prt=",
     "file": "CL616MP_119x42_76.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -12880,6 +13054,7 @@
     "code": "CL502MP",
     "url": "https://www.label.kr/Goods/Detail/502/MPL?prt=",
     "file": "CL502MP_140x140.json",
+    "labelsPerSheet": 2,
     "prices": [
       {
         "sheets": 25,
@@ -12954,6 +13129,7 @@
     "code": "CL526SMP",
     "url": "https://www.label.kr/Goods/Detail/526S/MPL?prt=",
     "file": "CL526SMP_145_7x16_95.json",
+    "labelsPerSheet": 16,
     "prices": [
       {
         "sheets": 25,
@@ -13028,6 +13204,7 @@
     "code": "CL619MP",
     "url": "https://www.label.kr/Goods/Detail/619/MPL?prt=",
     "file": "CL619MP_150x28_03.json",
+    "labelsPerSheet": 9,
     "prices": [
       {
         "sheets": 25,
@@ -13102,6 +13279,7 @@
     "code": "CL617MP",
     "url": "https://www.label.kr/Goods/Detail/617/MPL?prt=",
     "file": "CL617MP_159_5x38_07.json",
+    "labelsPerSheet": 7,
     "prices": [
       {
         "sheets": 25,
@@ -13176,6 +13354,7 @@
     "code": "CL614MP",
     "url": "https://www.label.kr/Goods/Detail/614/MPL?prt=",
     "file": "CL614MP_159_5x59_85.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -13250,6 +13429,7 @@
     "code": "CL814MP",
     "url": "https://www.label.kr/Goods/Detail/814/MPL?prt=",
     "file": "CL814MP_160x70.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -13324,6 +13504,7 @@
     "code": "CL916MP",
     "url": "https://www.label.kr/Goods/Detail/916/MPL?prt=",
     "file": "CL916MP_175x83.json",
+    "labelsPerSheet": 3,
     "prices": [
       {
         "sheets": 25,
@@ -13398,6 +13579,7 @@
     "code": "CL514MP",
     "url": "https://www.label.kr/Goods/Detail/514/MPL?prt=",
     "file": "CL514MP_180x20.json",
+    "labelsPerSheet": 14,
     "prices": [
       {
         "sheets": 25,
@@ -13472,6 +13654,7 @@
     "code": "CL516MP",
     "url": "https://www.label.kr/Goods/Detail/516/MPL?prt=",
     "file": "CL516MP_189_6x43_05.json",
+    "labelsPerSheet": 6,
     "prices": [
       {
         "sheets": 25,
@@ -13546,6 +13729,7 @@
     "code": "CL618MP",
     "url": "https://www.label.kr/Goods/Detail/618/MPL?prt=",
     "file": "CL618MP_190x35.json",
+    "labelsPerSheet": 8,
     "prices": [
       {
         "sheets": 25,
@@ -13620,6 +13804,7 @@
     "code": "CL950MP",
     "url": "https://www.label.kr/Goods/Detail/950/MPL?prt=",
     "file": "CL950MP_195x21_3.json",
+    "labelsPerSheet": 12,
     "prices": [
       {
         "sheets": 25,
@@ -13694,6 +13879,7 @@
     "code": "CL812MP",
     "url": "https://www.label.kr/Goods/Detail/812/MPL?prt=",
     "file": "CL812MP_196x125.json",
+    "labelsPerSheet": 2,
     "prices": [
       {
         "sheets": 25,
@@ -13768,6 +13954,7 @@
     "code": "CL212MP",
     "url": "https://www.label.kr/Goods/Detail/212/MPL?prt=",
     "file": "CL212MP_199x143_5.json",
+    "labelsPerSheet": 2,
     "prices": [
       {
         "sheets": 25,
@@ -13842,6 +14029,7 @@
     "code": "CL211MP",
     "url": "https://www.label.kr/Goods/Detail/211/MPL?prt=",
     "file": "CL211MP_199_1x288.json",
+    "labelsPerSheet": 1,
     "prices": [
       {
         "sheets": 25,
@@ -13916,6 +14104,7 @@
     "code": "CL928MP",
     "url": "https://www.label.kr/Goods/Detail/928/MPL?prt=",
     "file": "CL928MP_200x10.json",
+    "labelsPerSheet": 28,
     "prices": [
       {
         "sheets": 25,
@@ -13990,6 +14179,7 @@
     "code": "CL615MP",
     "url": "https://www.label.kr/Goods/Detail/615/MPL?prt=",
     "file": "CL615MP_200x55.json",
+    "labelsPerSheet": 5,
     "prices": [
       {
         "sheets": 25,
@@ -14064,6 +14254,7 @@
     "code": "CL414MP",
     "url": "https://www.label.kr/Goods/Detail/414/MPL?prt=",
     "file": "CL414MP_200x70.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -14138,6 +14329,7 @@
     "code": "CL213MP",
     "url": "https://www.label.kr/Goods/Detail/213/MPL?prt=",
     "file": "CL213MP_200_3x92_85.json",
+    "labelsPerSheet": 3,
     "prices": [
       {
         "sheets": 25,
@@ -14212,6 +14404,7 @@
     "code": "CL214MP",
     "url": "https://www.label.kr/Goods/Detail/214/MPL?prt=",
     "file": "CL214MP_201_5x67_7.json",
+    "labelsPerSheet": 4,
     "prices": [
       {
         "sheets": 25,
@@ -14286,6 +14479,7 @@
     "code": "CL612MP",
     "url": "https://www.label.kr/Goods/Detail/612/MPL?prt=",
     "file": "CL612MP_210x148_5.json",
+    "labelsPerSheet": 2,
     "prices": [
       {
         "sheets": 25,
@@ -14360,6 +14554,7 @@
     "code": "CL611MP",
     "url": "https://www.label.kr/Goods/Detail/611/MPL?prt=",
     "file": "CL611MP_210x297.json",
+    "labelsPerSheet": 1,
     "prices": [
       {
         "sheets": 25,

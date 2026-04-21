@@ -396,13 +396,10 @@ const createPresetPayload = (spec) => {
       gapHorizontalMm: Number(spec.gapHorizontalMm),
       gapVerticalMm: Number(spec.gapVerticalMm),
     },
-    pdfCopies: 1,
     elements: [
       {
         id: 'diag_1',
         type: 'line',
-        dataSource: 'static',
-        csvColumn: '0',
         x1: 0,
         y1: 0,
         x2: width,
@@ -412,8 +409,6 @@ const createPresetPayload = (spec) => {
       {
         id: 'diag_2',
         type: 'line',
-        dataSource: 'static',
-        csvColumn: '0',
         x1: width,
         y1: 0,
         x2: 0,

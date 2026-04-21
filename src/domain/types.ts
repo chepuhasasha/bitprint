@@ -12,11 +12,14 @@ export type BarcodeType =
 export interface BaseElement {
   id: string
   type: ElementType
+}
+
+export interface DataBoundElement extends BaseElement {
   dataSource: DataSource
   csvColumn: string
 }
 
-export interface PositionedElement extends BaseElement {
+export interface PositionedElement extends DataBoundElement {
   x: number
   y: number
   width: number

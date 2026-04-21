@@ -367,7 +367,6 @@ export const useLabelEditor = () => {
       labelHeightMm: state.labelHeightMm,
       manualLabelCount: state.manualLabelCount,
       printSheet: state.printSheet,
-      pdfCopies: 1,
       elements: state.elements,
     }
 

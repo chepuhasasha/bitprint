@@ -4,7 +4,6 @@ const PROJECT_PAYLOAD_KEYS = [
   'labelWidthMm',
   'labelHeightMm',
   'manualLabelCount',
-  'pdfCopies',
   'printSheet',
   'elements',
 ] as const
@@ -68,8 +67,6 @@ const IMAGE_ELEMENT_KEYS = [
 const LINE_ELEMENT_KEYS = [
   'id',
   'type',
-  'dataSource',
-  'csvColumn',
   'x1',
   'y1',
   'x2',
@@ -83,7 +80,6 @@ export interface SavedProjectPayload {
   labelWidthMm: number
   labelHeightMm: number
   manualLabelCount: number
-  pdfCopies: number
   printSheet: PrintSheetSettings
   elements: LabelElement[]
 }
@@ -121,8 +117,12 @@ const isImageScaleMode = (value: unknown): value is 'contain' | 'stretch' => {
   return value === 'contain' || value === 'stretch'
 }
 
+const isBaseElementPropsValid = (value: Record<string, unknown>): boolean => {
+  return isNonEmptyString(value.id)
+}
+
 const isCommonElementPropsValid = (value: Record<string, unknown>): boolean => {
-  return isNonEmptyString(value.id) && isDataSource(value.dataSource) && isString(value.csvColumn)
+  return isBaseElementPropsValid(value) && isDataSource(value.dataSource) && isString(value.csvColumn)
 }
 
 const isPositionedElementPropsValid = (value: Record<string, unknown>): boolean => {
@@ -180,7 +180,7 @@ const isValidElement = (value: unknown): value is LabelElement => {
   if (value.type === 'line') {
     return (
       hasExactKeys(value, LINE_ELEMENT_KEYS) &&
-      isCommonElementPropsValid(value) &&
+      isBaseElementPropsValid(value) &&
       isFiniteNumber(value.x1) &&
       isFiniteNumber(value.y1) &&
       isFiniteNumber(value.x2) &&
@@ -224,7 +224,6 @@ export const isValidProjectPayload = (value: unknown): value is SavedProjectPayl
   }
 
   const manualLabelCount = value.manualLabelCount
-  const pdfCopies = value.pdfCopies
 
   return (
     isFiniteNumber(value.labelWidthMm) &&
@@ -234,9 +233,6 @@ export const isValidProjectPayload = (value: unknown): value is SavedProjectPayl
     isFiniteNumber(manualLabelCount) &&
     Number.isInteger(manualLabelCount) &&
     manualLabelCount > 0 &&
-    isFiniteNumber(pdfCopies) &&
-    Number.isInteger(pdfCopies) &&
-    pdfCopies > 0 &&
     isValidPrintSheet(value.printSheet) &&
     Array.isArray(value.elements) &&
     value.elements.every((item) => isValidElement(item))

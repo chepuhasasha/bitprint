@@ -6,17 +6,17 @@ export const parseNumber = (value: unknown, fallback = 0): number => {
   return Number.isFinite(parsed) ? roundMm(parsed) : fallback
 }
 
-const hasStaticValue = (element: LabelElement): element is Exclude<LabelElement, { type: 'line' }> => {
-  return element.type !== 'line'
-}
-
 export const getElementValue = (
   element: LabelElement,
   csvData: string[][],
   csvRow: string[] | null = null,
 ): string => {
+  if (element.type === 'line') {
+    return ''
+  }
+
   if (element.dataSource === 'static') {
-    return hasStaticValue(element) ? String(element.staticValue ?? '') : ''
+    return String(element.staticValue ?? '')
   }
 
   if (element.dataSource === 'pdf') {
