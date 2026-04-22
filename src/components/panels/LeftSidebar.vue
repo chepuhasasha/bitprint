@@ -25,6 +25,7 @@ const props = defineProps<{
   pdfLoadingText: string
   printSheet: PrintSheetSettings
   printGrid: PrintGrid
+  debugPrintGridEnabled: boolean
   presets: PresetListEntry[]
   presetsLoading: boolean
   presetsError: string
@@ -44,6 +45,7 @@ const emit = defineEmits<{
   (event: 'delete-layer', payload: string): void
   (event: 'move-layer', payload: { id: string; direction: 'forward' | 'backward' }): void
   (event: 'update-print-sheet', payload: Partial<PrintSheetSettings>): void
+  (event: 'update-debug-print-grid', payload: boolean): void
   (event: 'update-manual-label-count', payload: number): void
   (event: 'reload-presets'): void
   (event: 'apply-preset', payload: string): void
@@ -93,6 +95,11 @@ const onPrintNumberChange = (key: keyof PrintSheetSettings, event: Event): void 
 const onManualCountChange = (event: Event): void => {
   const target = event.target as HTMLInputElement
   emit('update-manual-label-count', Number(target.value))
+}
+
+const onDebugPrintGridChange = (event: Event): void => {
+  const target = event.target as HTMLInputElement
+  emit('update-debug-print-grid', target.checked)
 }
 
 const hasPdfFile = computed(() => Boolean(props.pdfFileName))
@@ -282,6 +289,9 @@ aside.left-sidebar
 
     p.grid-info(v-if='printGrid.labelsPerPage > 0') Сетка: {{ printGrid.columns }} × {{ printGrid.rows }} ({{ printGrid.labelsPerPage }} шт./лист)
     p.grid-info.grid-info--warn(v-else) Этикетка не помещается при текущих полях/отступах
+    label.debug-toggle
+      input(type='checkbox' :checked='debugPrintGridEnabled' @change='onDebugPrintGridChange')
+      span Дебаг рамки при печати
 
   h2.panel-title Слои
   .layers-wrapper
@@ -513,6 +523,21 @@ aside.left-sidebar
 
 .grid-info--warn {
   color: #b45309;
+}
+
+.debug-toggle {
+  align-items: center;
+  color: #334155;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.35rem;
+}
+
+.debug-toggle input {
+  height: 0.9rem;
+  margin: 0;
+  width: 0.9rem;
 }
 
 .layers-wrapper {

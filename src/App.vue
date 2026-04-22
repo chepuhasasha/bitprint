@@ -244,6 +244,7 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       :pdf-loading-text='editor.pdfLoadingText.value'
       :print-sheet='editor.state.printSheet'
       :print-grid='editor.printGrid.value'
+      :debug-print-grid-enabled='editor.debugPrintGridEnabled.value'
       :presets='presets'
       :presets-loading='presetsLoading'
       :presets-error='presetsError'
@@ -259,6 +260,7 @@ const onApplyPreset = async (fileName: string): Promise<void> => {
       @delete-layer='editor.deleteElement'
       @move-layer='editor.moveElement($event.id, $event.direction)'
       @update-print-sheet='editor.updatePrintSheet'
+      @update-debug-print-grid='editor.setDebugPrintGridEnabled'
       @update-manual-label-count='editor.setManualLabelCount'
     )
 

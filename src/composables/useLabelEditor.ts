@@ -68,6 +68,7 @@ export const useLabelEditor = () => {
   const printProgressText = ref('Печать A4')
   const pdfLoading = ref(false)
   const pdfLoadingText = ref('')
+  const debugPrintGridEnabled = ref(true)
 
   const selectedElement = computed<LabelElement | null>(() => {
     return state.elements.find((element) => element.id === state.selectedId) ?? null
@@ -89,6 +90,10 @@ export const useLabelEditor = () => {
 
   const updatePrintSheet = (patch: Partial<PrintSheetSettings>): void => {
     state.printSheet = mergePrintSheet(state.printSheet, patch)
+  }
+
+  const setDebugPrintGridEnabled = (value: unknown): void => {
+    debugPrintGridEnabled.value = Boolean(value)
   }
 
   const setManualLabelCount = (count: unknown): void => {
@@ -466,8 +471,30 @@ export const useLabelEditor = () => {
 
           const renderIndex = Math.floor(labelIndex / copiesPerLabel)
           const row = getCsvRowByRenderIndex(renderIndex, rows)
-          const labelContent = createLabelDom(state.elements, (element) => getValue(element, row, renderIndex))
+          const labelContent = createLabelDom(
+            state.elements,
+            (element) => getValue(element, row, renderIndex),
+            {
+              labelWidthMm: state.labelWidthMm,
+              labelHeightMm: state.labelHeightMm,
+            },
+          )
           labelBox.appendChild(labelContent)
+          if (debugPrintGridEnabled.value) {
+            const debugOverlay = document.createElement('div')
+            debugOverlay.style.position = 'absolute'
+            debugOverlay.style.left = '0'
+            debugOverlay.style.top = '0'
+            debugOverlay.style.width = '100%'
+            debugOverlay.style.height = '100%'
+            debugOverlay.style.pointerEvents = 'none'
+            debugOverlay.style.boxSizing = 'border-box'
+            debugOverlay.style.border = '0.75mm solid #ff00ff'
+            debugOverlay.style.outline = '0.35mm solid #000'
+            debugOverlay.style.outlineOffset = '-0.35mm'
+            debugOverlay.style.zIndex = '9999'
+            labelBox.appendChild(debugOverlay)
+          }
 
           page.appendChild(labelBox)
 
@@ -496,9 +523,11 @@ export const useLabelEditor = () => {
     printProgressText,
     pdfLoading,
     pdfLoadingText,
+    debugPrintGridEnabled,
     initDefaults,
     setLabelSizeMm,
     updatePrintSheet,
+    setDebugPrintGridEnabled,
     setManualLabelCount,
     addElement,
     deleteElement,

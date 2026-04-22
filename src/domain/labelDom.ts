@@ -2,6 +2,13 @@ import { buildBarcodeSvgMarkup } from './barcode'
 import { roundMm } from './constants'
 import type { LabelElement } from './types'
 
+const SVG_NS = 'http://www.w3.org/2000/svg'
+
+interface LabelDomOptions {
+  labelWidthMm?: number
+  labelHeightMm?: number
+}
+
 const setAbsoluteMmBox = (
   element: HTMLElement,
   leftMm: number,
@@ -61,7 +68,43 @@ const createImageNode = (element: Extract<LabelElement, { type: 'image' }>, valu
   return node
 }
 
-const createLineNode = (element: Extract<LabelElement, { type: 'line' }>): HTMLElement => {
+const createLineNode = (
+  element: Extract<LabelElement, { type: 'line' }>,
+  options: LabelDomOptions,
+): HTMLElement => {
+  const labelWidthMm = Number(options.labelWidthMm)
+  const labelHeightMm = Number(options.labelHeightMm)
+  if (Number.isFinite(labelWidthMm) && labelWidthMm > 0 && Number.isFinite(labelHeightMm) && labelHeightMm > 0) {
+    const wrapper = document.createElement('div')
+    wrapper.style.position = 'absolute'
+    wrapper.style.left = '0'
+    wrapper.style.top = '0'
+    wrapper.style.width = '100%'
+    wrapper.style.height = '100%'
+    wrapper.style.pointerEvents = 'none'
+
+    const svg = document.createElementNS(SVG_NS, 'svg')
+    svg.setAttribute('width', '100%')
+    svg.setAttribute('height', '100%')
+    svg.setAttribute('viewBox', `0 0 ${labelWidthMm} ${labelHeightMm}`)
+    svg.setAttribute('preserveAspectRatio', 'none')
+    svg.style.display = 'block'
+    svg.style.overflow = 'visible'
+
+    const line = document.createElementNS(SVG_NS, 'line')
+    line.setAttribute('x1', String(element.x1))
+    line.setAttribute('y1', String(element.y1))
+    line.setAttribute('x2', String(element.x2))
+    line.setAttribute('y2', String(element.y2))
+    line.setAttribute('stroke', '#000')
+    line.setAttribute('stroke-width', String(Math.max(0.01, element.thickness)))
+    line.setAttribute('stroke-linecap', 'square')
+    svg.appendChild(line)
+    wrapper.appendChild(svg)
+
+    return wrapper
+  }
+
   const node = document.createElement('div')
   const dx = element.x2 - element.x1
   const dy = element.y2 - element.y1
@@ -103,7 +146,11 @@ const createBarcodeNode = (element: Extract<LabelElement, { type: 'code' }>, val
   return wrapper
 }
 
-export const createLabelDom = (elements: LabelElement[], getValue: (element: LabelElement) => string): HTMLElement => {
+export const createLabelDom = (
+  elements: LabelElement[],
+  getValue: (element: LabelElement) => string,
+  options: LabelDomOptions = {},
+): HTMLElement => {
   const root = document.createElement('div')
   root.className = 'print-label-root'
   root.style.position = 'relative'
@@ -127,7 +174,7 @@ export const createLabelDom = (elements: LabelElement[], getValue: (element: Lab
     }
 
     if (element.type === 'line') {
-      root.appendChild(createLineNode(element))
+      root.appendChild(createLineNode(element, options))
       continue
     }
 
