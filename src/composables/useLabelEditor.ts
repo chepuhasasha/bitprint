@@ -2,6 +2,7 @@ import Papa from 'papaparse'
 import { computed, reactive, ref } from 'vue'
 
 import {
+  DEFAULT_PRINT_CALIBRATION_SETTINGS,
   DEFAULT_LABEL_MM,
   DEFAULT_PRINT_SHEET_SETTINGS,
   roundMm,
@@ -10,11 +11,33 @@ import { applyElementPatch, updateElementProperty } from '../domain/elementMutat
 import { createDefaultElements, createElementByType } from '../domain/factories'
 import { createLabelDom } from '../domain/labelDom'
 import { loadPdfLabels as loadPdfPages } from '../domain/pdf'
-import { calculatePrintGrid, getGridLabelPosition, normalizePrintSheet } from '../domain/print'
+import {
+  calculatePrintGrid,
+  getCalibratedGridLabelPosition,
+  getGridLabelPosition,
+  normalizePrintCalibration,
+  normalizePrintSheet,
+} from '../domain/print'
 import { isValidProjectPayload } from '../domain/project'
 import type { SavedProjectPayload } from '../domain/project'
-import type { EditorState, ElementType, LabelElement, PrintSheetSettings } from '../domain/types'
+import type {
+  CalibrationPointShift,
+  EditorState,
+  ElementType,
+  LabelElement,
+  PrintCalibrationSettings,
+  PrintSheetSettings,
+} from '../domain/types'
 import { getElementValue } from '../domain/utils'
+
+const PRINT_CALIBRATION_STORAGE_KEY = 'bitprint.print-calibration.v1'
+
+type PrintCalibrationPatch = {
+  topLeft?: Partial<CalibrationPointShift>
+  topRight?: Partial<CalibrationPointShift>
+  bottomLeft?: Partial<CalibrationPointShift>
+  bottomRight?: Partial<CalibrationPointShift>
+}
 
 const parsePositiveFloat = (value: unknown, fallback: number): number => {
   const parsed = Number(value)
@@ -24,6 +47,46 @@ const parsePositiveFloat = (value: unknown, fallback: number): number => {
 const parseNonNegativeFloat = (value: unknown, fallback: number): number => {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback
+}
+
+const parseFiniteFloat = (value: unknown, fallback: number): number => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+const toCalibrationPointPatch = (value: unknown): Partial<CalibrationPointShift> => {
+  if (!isRecord(value)) {
+    return {}
+  }
+
+  const patch: Partial<CalibrationPointShift> = {}
+
+  if ('xMm' in value) {
+    patch.xMm = parseFiniteFloat(value.xMm, 0)
+  }
+
+  if ('yMm' in value) {
+    patch.yMm = parseFiniteFloat(value.yMm, 0)
+  }
+
+  return patch
+}
+
+const toCalibrationPatch = (value: unknown): PrintCalibrationPatch => {
+  if (!isRecord(value)) {
+    return {}
+  }
+
+  return {
+    topLeft: toCalibrationPointPatch(value.topLeft),
+    topRight: toCalibrationPointPatch(value.topRight),
+    bottomLeft: toCalibrationPointPatch(value.bottomLeft),
+    bottomRight: toCalibrationPointPatch(value.bottomRight),
+  }
 }
 
 const mergePrintSheet = (
@@ -39,6 +102,35 @@ const mergePrintSheet = (
     marginBottomMm: parseNonNegativeFloat(patch.marginBottomMm, current.marginBottomMm),
     gapHorizontalMm: parseNonNegativeFloat(patch.gapHorizontalMm, current.gapHorizontalMm),
     gapVerticalMm: parseNonNegativeFloat(patch.gapVerticalMm, current.gapVerticalMm),
+  })
+}
+
+const mergePrintCalibration = (
+  current: PrintCalibrationSettings,
+  patch: PrintCalibrationPatch,
+): PrintCalibrationSettings => {
+  const topLeft: Partial<CalibrationPointShift> = patch.topLeft ?? {}
+  const topRight: Partial<CalibrationPointShift> = patch.topRight ?? {}
+  const bottomLeft: Partial<CalibrationPointShift> = patch.bottomLeft ?? {}
+  const bottomRight: Partial<CalibrationPointShift> = patch.bottomRight ?? {}
+
+  return normalizePrintCalibration({
+    topLeft: {
+      xMm: parseFiniteFloat(topLeft.xMm, current.topLeft.xMm),
+      yMm: parseFiniteFloat(topLeft.yMm, current.topLeft.yMm),
+    },
+    topRight: {
+      xMm: parseFiniteFloat(topRight.xMm, current.topRight.xMm),
+      yMm: parseFiniteFloat(topRight.yMm, current.topRight.yMm),
+    },
+    bottomLeft: {
+      xMm: parseFiniteFloat(bottomLeft.xMm, current.bottomLeft.xMm),
+      yMm: parseFiniteFloat(bottomLeft.yMm, current.bottomLeft.yMm),
+    },
+    bottomRight: {
+      xMm: parseFiniteFloat(bottomRight.xMm, current.bottomRight.xMm),
+      yMm: parseFiniteFloat(bottomRight.yMm, current.bottomRight.yMm),
+    },
   })
 }
 
@@ -69,6 +161,57 @@ export const useLabelEditor = () => {
   const pdfLoading = ref(false)
   const pdfLoadingText = ref('')
   const debugPrintGridEnabled = ref(true)
+  const printCalibrationEnabled = ref(true)
+  const printCalibration = ref<PrintCalibrationSettings>({
+    ...DEFAULT_PRINT_CALIBRATION_SETTINGS,
+  })
+
+  const persistPrintCalibrationState = (): void => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    try {
+      window.localStorage.setItem(
+        PRINT_CALIBRATION_STORAGE_KEY,
+        JSON.stringify({
+          enabled: printCalibrationEnabled.value,
+          calibration: printCalibration.value,
+        }),
+      )
+    } catch {
+      // Ignore storage errors (private mode/quota).
+    }
+  }
+
+  const loadPrintCalibrationState = (): void => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    try {
+      const raw = window.localStorage.getItem(PRINT_CALIBRATION_STORAGE_KEY)
+      if (!raw) {
+        return
+      }
+
+      const parsed = JSON.parse(raw) as unknown
+      if (!isRecord(parsed)) {
+        return
+      }
+
+      if (typeof parsed.enabled === 'boolean') {
+        printCalibrationEnabled.value = parsed.enabled
+      }
+
+      const calibrationSource = 'calibration' in parsed ? parsed.calibration : parsed
+      printCalibration.value = mergePrintCalibration(printCalibration.value, toCalibrationPatch(calibrationSource))
+    } catch {
+      // Ignore invalid/missing local state.
+    }
+  }
+
+  loadPrintCalibrationState()
 
   const selectedElement = computed<LabelElement | null>(() => {
     return state.elements.find((element) => element.id === state.selectedId) ?? null
@@ -94,6 +237,16 @@ export const useLabelEditor = () => {
 
   const setDebugPrintGridEnabled = (value: unknown): void => {
     debugPrintGridEnabled.value = Boolean(value)
+  }
+
+  const setPrintCalibrationEnabled = (value: unknown): void => {
+    printCalibrationEnabled.value = Boolean(value)
+    persistPrintCalibrationState()
+  }
+
+  const updatePrintCalibration = (patch: PrintCalibrationPatch): void => {
+    printCalibration.value = mergePrintCalibration(printCalibration.value, patch)
+    persistPrintCalibrationState()
   }
 
   const setManualLabelCount = (count: unknown): void => {
@@ -450,13 +603,22 @@ export const useLabelEditor = () => {
 
         for (let labelIndex = pageStart; labelIndex < pageEnd; labelIndex += 1) {
           const cellIndex = labelIndex - pageStart
-          const position = getGridLabelPosition(
-            cellIndex,
-            grid,
-            state.labelWidthMm,
-            state.labelHeightMm,
-            state.printSheet,
-          )
+          const position = printCalibrationEnabled.value
+            ? getCalibratedGridLabelPosition(
+                cellIndex,
+                grid,
+                state.labelWidthMm,
+                state.labelHeightMm,
+                state.printSheet,
+                printCalibration.value,
+              )
+            : getGridLabelPosition(
+                cellIndex,
+                grid,
+                state.labelWidthMm,
+                state.labelHeightMm,
+                state.printSheet,
+              )
 
           const labelBox = document.createElement('div')
           labelBox.className = 'print-label-box'
@@ -471,7 +633,6 @@ export const useLabelEditor = () => {
           if (debugPrintGridEnabled.value) {
             labelBox.style.outline = '0.25mm solid #ff00ff'
             labelBox.style.outlineOffset = '0'
-            labelBox.style.boxShadow = '0 0 0 0.1mm #000'
           }
 
           const renderIndex = Math.floor(labelIndex / copiesPerLabel)
@@ -514,10 +675,14 @@ export const useLabelEditor = () => {
     pdfLoading,
     pdfLoadingText,
     debugPrintGridEnabled,
+    printCalibrationEnabled,
+    printCalibration,
     initDefaults,
     setLabelSizeMm,
     updatePrintSheet,
     setDebugPrintGridEnabled,
+    setPrintCalibrationEnabled,
+    updatePrintCalibration,
     setManualLabelCount,
     addElement,
     deleteElement,

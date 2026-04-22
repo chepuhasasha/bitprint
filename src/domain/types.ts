@@ -89,6 +89,18 @@ export interface PrintSheetSettings {
   gapVerticalMm: number
 }
 
+export interface CalibrationPointShift {
+  xMm: number
+  yMm: number
+}
+
+export interface PrintCalibrationSettings {
+  topLeft: CalibrationPointShift
+  topRight: CalibrationPointShift
+  bottomLeft: CalibrationPointShift
+  bottomRight: CalibrationPointShift
+}
+
 export interface EditorState {
   labelWidthMm: number
   labelHeightMm: number

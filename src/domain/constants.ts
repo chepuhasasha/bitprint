@@ -1,4 +1,4 @@
-import type { PrintSheetSettings } from './types'
+import type { PrintCalibrationSettings, PrintSheetSettings } from './types'
 
 export const PREVIEW_PX_PER_MM = 14
 
@@ -35,6 +35,13 @@ export const DEFAULT_PRINT_SHEET_SETTINGS: PrintSheetSettings = {
   marginBottomMm: 10.05,
   gapHorizontalMm: 2.5,
   gapVerticalMm: 2.53,
+}
+
+export const DEFAULT_PRINT_CALIBRATION_SETTINGS: PrintCalibrationSettings = {
+  topLeft: { xMm: 0, yMm: 0 },
+  topRight: { xMm: 0, yMm: 0 },
+  bottomLeft: { xMm: 0, yMm: 0 },
+  bottomRight: { xMm: 0, yMm: 0 },
 }
 
 export const DEFAULT_IMAGE_DATA_URI =

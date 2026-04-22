@@ -1,4 +1,4 @@
-import type { PrintSheetSettings } from './types'
+import type { PrintCalibrationSettings, PrintSheetSettings } from './types'
 
 export interface PrintGrid {
   columns: number
@@ -21,6 +21,10 @@ const asPositive = (value: number, fallback: number): number => {
 
 const asNonNegative = (value: number): number => {
   return Number.isFinite(value) && value >= 0 ? value : 0
+}
+
+const asFinite = (value: number): number => {
+  return Number.isFinite(value) ? value : 0
 }
 
 const calculateExpandedGap = (usableSize: number, itemSize: number, itemCount: number, minGap: number): number => {
@@ -46,6 +50,27 @@ export const normalizePrintSheet = (settings: PrintSheetSettings): PrintSheetSet
     marginBottomMm: asNonNegative(settings.marginBottomMm),
     gapHorizontalMm: asNonNegative(settings.gapHorizontalMm),
     gapVerticalMm: asNonNegative(settings.gapVerticalMm),
+  }
+}
+
+export const normalizePrintCalibration = (settings: PrintCalibrationSettings): PrintCalibrationSettings => {
+  return {
+    topLeft: {
+      xMm: asFinite(settings.topLeft.xMm),
+      yMm: asFinite(settings.topLeft.yMm),
+    },
+    topRight: {
+      xMm: asFinite(settings.topRight.xMm),
+      yMm: asFinite(settings.topRight.yMm),
+    },
+    bottomLeft: {
+      xMm: asFinite(settings.bottomLeft.xMm),
+      yMm: asFinite(settings.bottomLeft.yMm),
+    },
+    bottomRight: {
+      xMm: asFinite(settings.bottomRight.xMm),
+      yMm: asFinite(settings.bottomRight.yMm),
+    },
   }
 }
 
@@ -107,5 +132,39 @@ export const getGridLabelPosition = (
   return {
     leftMm: safe.marginLeftMm + columnIndex * (safeLabelWidth + grid.gapHorizontalMm),
     topMm: safe.marginTopMm + rowIndex * (safeLabelHeight + grid.gapVerticalMm),
+  }
+}
+
+const lerp = (start: number, end: number, factor: number): number => {
+  return start + (end - start) * factor
+}
+
+export const getCalibratedGridLabelPosition = (
+  gridIndex: number,
+  grid: PrintGrid,
+  labelWidthMm: number,
+  labelHeightMm: number,
+  sheetSettings: PrintSheetSettings,
+  calibrationSettings: PrintCalibrationSettings,
+): LabelGridPosition => {
+  const base = getGridLabelPosition(gridIndex, grid, labelWidthMm, labelHeightMm, sheetSettings)
+  const calibration = normalizePrintCalibration(calibrationSettings)
+
+  const columnIndex = grid.columns > 0 ? gridIndex % grid.columns : 0
+  const rowIndex = grid.columns > 0 ? Math.floor(gridIndex / grid.columns) : 0
+  const u = grid.columns > 1 ? columnIndex / (grid.columns - 1) : 0
+  const v = grid.rows > 1 ? rowIndex / (grid.rows - 1) : 0
+
+  const measuredXOnTop = lerp(calibration.topLeft.xMm, calibration.topRight.xMm, u)
+  const measuredXOnBottom = lerp(calibration.bottomLeft.xMm, calibration.bottomRight.xMm, u)
+  const measuredYOnLeft = lerp(calibration.topLeft.yMm, calibration.bottomLeft.yMm, v)
+  const measuredYOnRight = lerp(calibration.topRight.yMm, calibration.bottomRight.yMm, v)
+
+  const measuredX = lerp(measuredXOnTop, measuredXOnBottom, v)
+  const measuredY = lerp(measuredYOnLeft, measuredYOnRight, u)
+
+  return {
+    leftMm: base.leftMm - measuredX,
+    topMm: base.topMm - measuredY,
   }
 }

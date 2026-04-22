@@ -3,7 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import LayersList from './LayersList.vue'
 import type { PrintGrid } from '../../domain/print'
-import type { LabelElement, PrintSheetSettings } from '../../domain/types'
+import type { LabelElement, PrintCalibrationSettings, PrintSheetSettings } from '../../domain/types'
 
 interface PresetListEntry {
   name: string
@@ -26,6 +26,8 @@ const props = defineProps<{
   printSheet: PrintSheetSettings
   printGrid: PrintGrid
   debugPrintGridEnabled: boolean
+  printCalibrationEnabled: boolean
+  printCalibration: PrintCalibrationSettings
   presets: PresetListEntry[]
   presetsLoading: boolean
   presetsError: string
@@ -46,6 +48,8 @@ const emit = defineEmits<{
   (event: 'move-layer', payload: { id: string; direction: 'forward' | 'backward' }): void
   (event: 'update-print-sheet', payload: Partial<PrintSheetSettings>): void
   (event: 'update-debug-print-grid', payload: boolean): void
+  (event: 'update-print-calibration-enabled', payload: boolean): void
+  (event: 'update-print-calibration', payload: Partial<PrintCalibrationSettings>): void
   (event: 'update-manual-label-count', payload: number): void
   (event: 'reload-presets'): void
   (event: 'apply-preset', payload: string): void
@@ -100,6 +104,26 @@ const onManualCountChange = (event: Event): void => {
 const onDebugPrintGridChange = (event: Event): void => {
   const target = event.target as HTMLInputElement
   emit('update-debug-print-grid', target.checked)
+}
+
+const onCalibrationEnabledChange = (event: Event): void => {
+  const target = event.target as HTMLInputElement
+  emit('update-print-calibration-enabled', target.checked)
+}
+
+const onCalibrationChange = (
+  corner: keyof PrintCalibrationSettings,
+  axis: 'xMm' | 'yMm',
+  event: Event,
+): void => {
+  const target = event.target as HTMLInputElement
+  const value = Number(target.value)
+  emit('update-print-calibration', {
+    [corner]: {
+      ...props.printCalibration[corner],
+      [axis]: value,
+    },
+  })
 }
 
 const hasPdfFile = computed(() => Boolean(props.pdfFileName))
@@ -292,6 +316,85 @@ aside.left-sidebar
     label.debug-toggle
       input(type='checkbox' :checked='debugPrintGridEnabled' @change='onDebugPrintGridChange')
       span Дебаг рамки при печати
+    .calibration-box
+      p.calibration-title Калибровка печати (мм)
+      p.calibration-note Введите измеренный сдвиг факта: влево/вверх — отрицательное, вправо/вниз — положительное. Компенсация применяется автоматически.
+      label.calibration-toggle
+        input(type='checkbox' :checked='printCalibrationEnabled' @change='onCalibrationEnabledChange')
+        span Компенсация включена
+      .calibration-grid
+        label.field
+          span Лев. верх X
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.topLeft.xMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("topLeft", "xMm", $event)'
+          )
+        label.field
+          span Лев. верх Y
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.topLeft.yMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("topLeft", "yMm", $event)'
+          )
+        label.field
+          span Прав. верх X
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.topRight.xMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("topRight", "xMm", $event)'
+          )
+        label.field
+          span Прав. верх Y
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.topRight.yMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("topRight", "yMm", $event)'
+          )
+        label.field
+          span Лев. низ X
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.bottomLeft.xMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("bottomLeft", "xMm", $event)'
+          )
+        label.field
+          span Лев. низ Y
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.bottomLeft.yMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("bottomLeft", "yMm", $event)'
+          )
+        label.field
+          span Прав. низ X
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.bottomRight.xMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("bottomRight", "xMm", $event)'
+          )
+        label.field
+          span Прав. низ Y
+          input(
+            type='number'
+            step='0.01'
+            :value='printCalibration.bottomRight.yMm'
+            :disabled='!printCalibrationEnabled'
+            @change='onCalibrationChange("bottomRight", "yMm", $event)'
+          )
 
   h2.panel-title Слои
   .layers-wrapper
@@ -348,6 +451,9 @@ aside.left-sidebar
   flex-direction: column;
   flex-shrink: 0;
   gap: 0.65rem;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0.9rem;
   width: 16rem;
 }
@@ -540,10 +646,54 @@ aside.left-sidebar
   width: 0.9rem;
 }
 
+.calibration-box {
+  background: #f8fafc;
+  border: 1px solid #d5e2f1;
+  border-radius: 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  padding: 0.4rem;
+}
+
+.calibration-title {
+  color: #334155;
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.calibration-note {
+  color: #64748b;
+  font-size: 0.66rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.calibration-toggle {
+  align-items: center;
+  color: #334155;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 0.35rem;
+}
+
+.calibration-toggle input {
+  height: 0.9rem;
+  margin: 0;
+  width: 0.9rem;
+}
+
+.calibration-grid {
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .layers-wrapper {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+  min-height: auto;
+  overflow: visible;
 }
 
 .presets-modal-overlay {
