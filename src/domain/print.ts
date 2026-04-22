@@ -4,6 +4,8 @@ export interface PrintGrid {
   columns: number
   rows: number
   labelsPerPage: number
+  gapHorizontalMm: number
+  gapVerticalMm: number
 }
 
 interface LabelGridPosition {
@@ -19,6 +21,19 @@ const asPositive = (value: number, fallback: number): number => {
 
 const asNonNegative = (value: number): number => {
   return Number.isFinite(value) && value >= 0 ? value : 0
+}
+
+const calculateExpandedGap = (usableSize: number, itemSize: number, itemCount: number, minGap: number): number => {
+  if (itemCount <= 1) {
+    return minGap
+  }
+
+  const availableGapSpace = usableSize - itemSize * itemCount
+  if (availableGapSpace <= FLOAT_EPSILON) {
+    return minGap
+  }
+
+  return Math.max(minGap, availableGapSpace / (itemCount - 1))
 }
 
 export const normalizePrintSheet = (settings: PrintSheetSettings): PrintSheetSettings => {
@@ -51,6 +66,8 @@ export const calculatePrintGrid = (
       columns: 0,
       rows: 0,
       labelsPerPage: 0,
+      gapHorizontalMm: safe.gapHorizontalMm,
+      gapVerticalMm: safe.gapVerticalMm,
     }
   }
 
@@ -62,27 +79,33 @@ export const calculatePrintGrid = (
     0,
     Math.floor((usableHeight + safe.gapVerticalMm + FLOAT_EPSILON) / (safeLabelHeight + safe.gapVerticalMm)),
   )
+  const gapHorizontalMm = calculateExpandedGap(usableWidth, safeLabelWidth, columns, safe.gapHorizontalMm)
+  const gapVerticalMm = calculateExpandedGap(usableHeight, safeLabelHeight, rows, safe.gapVerticalMm)
 
   return {
     columns,
     rows,
     labelsPerPage: columns * rows,
+    gapHorizontalMm,
+    gapVerticalMm,
   }
 }
 
 export const getGridLabelPosition = (
   gridIndex: number,
-  columns: number,
+  grid: PrintGrid,
   labelWidthMm: number,
   labelHeightMm: number,
   settings: PrintSheetSettings,
 ): LabelGridPosition => {
   const safe = normalizePrintSheet(settings)
-  const columnIndex = columns > 0 ? gridIndex % columns : 0
-  const rowIndex = columns > 0 ? Math.floor(gridIndex / columns) : 0
+  const safeLabelWidth = asPositive(labelWidthMm, 1)
+  const safeLabelHeight = asPositive(labelHeightMm, 1)
+  const columnIndex = grid.columns > 0 ? gridIndex % grid.columns : 0
+  const rowIndex = grid.columns > 0 ? Math.floor(gridIndex / grid.columns) : 0
 
   return {
-    leftMm: safe.marginLeftMm + columnIndex * (labelWidthMm + safe.gapHorizontalMm),
-    topMm: safe.marginTopMm + rowIndex * (labelHeightMm + safe.gapVerticalMm),
+    leftMm: safe.marginLeftMm + columnIndex * (safeLabelWidth + grid.gapHorizontalMm),
+    topMm: safe.marginTopMm + rowIndex * (safeLabelHeight + grid.gapVerticalMm),
   }
 }

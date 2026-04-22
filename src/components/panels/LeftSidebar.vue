@@ -274,10 +274,10 @@ aside.left-sidebar
 
     .field-group
       label.field
-        span Гор. отступ
+        span Мин. гор. отступ
         input(type='number' step='0.01' min='0' :value='printSheet.gapHorizontalMm' @change='onPrintNumberChange("gapHorizontalMm", $event)')
       label.field
-        span Вер. отступ
+        span Мин. вер. отступ
         input(type='number' step='0.01' min='0' :value='printSheet.gapVerticalMm' @change='onPrintNumberChange("gapVerticalMm", $event)')
 
     p.grid-info(v-if='printGrid.labelsPerPage > 0') Сетка: {{ printGrid.columns }} × {{ printGrid.rows }} ({{ printGrid.labelsPerPage }} шт./лист)

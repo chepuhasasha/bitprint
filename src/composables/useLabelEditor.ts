@@ -447,7 +447,7 @@ export const useLabelEditor = () => {
           const cellIndex = labelIndex - pageStart
           const position = getGridLabelPosition(
             cellIndex,
-            grid.columns,
+            grid,
             state.labelWidthMm,
             state.labelHeightMm,
             state.printSheet,
