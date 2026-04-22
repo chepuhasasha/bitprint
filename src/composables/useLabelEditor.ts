@@ -468,6 +468,11 @@ export const useLabelEditor = () => {
           labelBox.style.overflow = 'hidden'
           labelBox.style.background = '#fff'
           labelBox.style.boxSizing = 'border-box'
+          if (debugPrintGridEnabled.value) {
+            labelBox.style.outline = '0.25mm solid #ff00ff'
+            labelBox.style.outlineOffset = '0'
+            labelBox.style.boxShadow = '0 0 0 0.1mm #000'
+          }
 
           const renderIndex = Math.floor(labelIndex / copiesPerLabel)
           const row = getCsvRowByRenderIndex(renderIndex, rows)
@@ -480,21 +485,6 @@ export const useLabelEditor = () => {
             },
           )
           labelBox.appendChild(labelContent)
-          if (debugPrintGridEnabled.value) {
-            const debugOverlay = document.createElement('div')
-            debugOverlay.style.position = 'absolute'
-            debugOverlay.style.left = '0'
-            debugOverlay.style.top = '0'
-            debugOverlay.style.width = '100%'
-            debugOverlay.style.height = '100%'
-            debugOverlay.style.pointerEvents = 'none'
-            debugOverlay.style.boxSizing = 'border-box'
-            debugOverlay.style.border = '0.75mm solid #ff00ff'
-            debugOverlay.style.outline = '0.35mm solid #000'
-            debugOverlay.style.outlineOffset = '-0.35mm'
-            debugOverlay.style.zIndex = '9999'
-            labelBox.appendChild(debugOverlay)
-          }
 
           page.appendChild(labelBox)
 
